@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f8f7f4;
+  color: #1a1a18;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d0cfc8; border-radius: 3px; }
+
+.table-wrap { overflow-x: auto; max-height: 68vh; overflow-y: auto; }
+.table-wrap thead th { position: sticky; top: 0; z-index: 10; background: white; }
+
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+.fade-in { animation: fadeIn 0.2s ease-out; }
+
+@keyframes pulse-slow { 0%,100%{opacity:1} 50%{opacity:.45} }
+.pulse-slow { animation: pulse-slow 1.8s ease-in-out infinite; }

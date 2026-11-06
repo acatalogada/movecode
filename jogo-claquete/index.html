@@ -347,9 +347,118 @@
   ];
   let MAP, COLS, ROWS, START, DOOR, DOOR_OUT, HOUSE_Y, HOUSE_SLOTS, TUNNEL_Y, TUNNEL_EDGE;
   let layout = "classic";
+
+  // labirintos extras: um desenho diferente a cada cena
+  const MAPS_VERTICAL = [MAP_VERTICAL,
+    [
+      "###############",
+      "#.............#",
+      "#.###.###.###.#",
+      "#o...........o#",
+      "#.#.###.###.#.#",
+      "#.#.........#.#",
+      "#.#.##.#.##.#.#",
+      "#......#......#",
+      "#.##.......##.#",
+      "#.##.##-##.##.#",
+      "    .#GGG#.    ",
+      "#.##.#####.##.#",
+      "#.##.......##.#",
+      "#...#.#.#.#...#",
+      "###.#.#.#.#.###",
+      "#.....#.#.....#",
+      "#.###.#.#.###.#",
+      "#o.....P.....o#",
+      "#.#.###.###.#.#",
+      "#.#.........#.#",
+      "#.###.###.###.#",
+      "#.............#",
+      "###############",
+    ],
+    [
+      "###############",
+      "#...#.....#...#",
+      "#o#.#.#.#.#.#o#",
+      "#.............#",
+      "#.##.#####.##.#",
+      "#.##.......##.#",
+      "#....#.#.#....#",
+      "####.#...#.####",
+      "#.............#",
+      "#.##.##-##.##.#",
+      "    .#GGG#.    ",
+      "#.#..#####..#.#",
+      "#.#.........#.#",
+      "#.#.##.#.##.#.#",
+      "#......#......#",
+      "###.##...##.###",
+      "#o...........o#",
+      "#.##.#.P.#.##.#",
+      "#.##.#.#.#.##.#",
+      "#.............#",
+      "#.###.###.###.#",
+      "#.............#",
+      "###############",
+    ],
+    [
+      "###############",
+      "#.............#",
+      "#.#.##.#.##.#.#",
+      "#o#.........#o#",
+      "#.#.#.###.#.#.#",
+      "#...#.....#...#",
+      "###.###.###.###",
+      "#.............#",
+      "#.##.......##.#",
+      "#.##.##-##.##.#",
+      "    .#GGG#.    ",
+      "##.#.#####.#.##",
+      "#.............#",
+      "#.###.#.#.###.#",
+      "#.....#.#.....#",
+      "#.#.#.#.#.#.#.#",
+      "#o#.........#o#",
+      "#.###..P..###.#",
+      "#...#.###.#...#",
+      "###.#.....#.###",
+      "#.....#.#.....#",
+      "#.............#",
+      "###############",
+    ],
+  ];
+  const MAPS_CLASSIC = [MAP_CLASSIC,
+    [
+      "#####################",
+      "#o.................o#",
+      "#.##.#.###.###.#.##.#",
+      "#.##.#.........#.##.#",
+      "#....###.###.###....#",
+      "#.........#.........#",
+      "#####.### # ###.#####",
+      "#####.#       #.#####",
+      "#####.# ##-## #.#####",
+      "     .  #GGG#  .     ",
+      "#####.# ##### #.#####",
+      "#####.#       #.#####",
+      "#####.# ##### #.#####",
+      "#.........#.........#",
+      "#.#.###.#.#.#.###.#.#",
+      "#o#...#...P...#...#o#",
+      "#...#.#.#####.#.#...#",
+      "###.#...#...#...#.###",
+      "#...###.#.#.#.###...#",
+      "#...................#",
+      "#####################",
+    ],
+  ];
+
   function setLayout(name) {
     layout = name;
-    MAP = name === "vertical" ? MAP_VERTICAL : MAP_CLASSIC;
+    loadMap(0);
+  }
+  function loadMap(i) {
+    const maps = layout === "vertical" ? MAPS_VERTICAL : MAPS_CLASSIC;
+    MAP = maps[i % maps.length];
     ROWS = MAP.length; COLS = MAP[0].length;
     const g = [];
     MAP.forEach((row, y) => row.split("").forEach((c, x) => {
@@ -512,6 +621,7 @@
   function frightDuration() { return Math.max(4, 11 - (level - 1) * 1.2); }
 
   function buildGrid() {
+    loadMap(level - 1);
     grid = MAP.map(r => r.split(""));
     dotsLeft = 0; dotsEaten = 0;
     for (const row of grid) for (const c of row) if (c === "." || c === "o") dotsLeft++;
@@ -883,8 +993,9 @@
     const ins = tile * 0.17, R = tile * 0.3;
     const shape = (x, y, off) => {
       const u = isWall(x, y - 1), d = isWall(x, y + 1), l = isWall(x - 1, y), r = isWall(x + 1, y);
-      const x0 = x * tile + (l ? 0 : ins), x1 = (x + 1) * tile - (r ? 0 : ins);
-      const y0 = y * tile + (u ? 0 : ins) + off, y1 = (y + 1) * tile - (d ? 0 : ins) + off;
+      // emendas sobrepostas meio pixel para não aparecerem riscos entre blocos
+      const x0 = x * tile + (l ? -0.5 : ins), x1 = (x + 1) * tile - (r ? -0.5 : ins);
+      const y0 = y * tile + (u ? -0.5 : ins) + off, y1 = (y + 1) * tile - (d ? -0.5 : ins) + off;
       const tl = !u && !l ? R : 0, tr = !u && !r ? R : 0, br = !d && !r ? R : 0, bl = !d && !l ? R : 0;
       m.beginPath();
       m.moveTo(x0 + tl, y0);
@@ -1326,10 +1437,19 @@
       const c = grid[y][x];
       const cx = (x + 0.5) * tile, cy = (y + 0.5) * tile;
       if (c === ".") {
-        ctx.fillStyle = C.marquee;
-        ctx.beginPath(); ctx.arc(cx, cy, tile * 0.12, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "rgba(255,255,255,0.8)";
-        ctx.beginPath(); ctx.arc(cx - tile * 0.04, cy - tile * 0.04, tile * 0.04, 0, Math.PI * 2); ctx.fill();
+        // moeda dourada girando devagar
+        const r = tile * 0.17;
+        const sx = 0.55 + 0.45 * Math.abs(Math.cos(now * 2.2 + (x + y) * 0.6));
+        ctx.save(); ctx.translate(cx, cy); ctx.scale(sx, 1);
+        ctx.fillStyle = "#b8862a";
+        ctx.beginPath(); ctx.arc(0, r * 0.12, r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#f5c84c";
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "#c9952f"; ctx.lineWidth = Math.max(0.8, r * 0.18);
+        ctx.beginPath(); ctx.arc(0, 0, r * 0.62, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,0.75)";
+        ctx.beginPath(); ctx.ellipse(-r * 0.38, -r * 0.38, r * 0.2, r * 0.12, -0.8, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
       } else if (c === "o") {
         drawCoffee(ctx, cx, cy, tile * 1.2);
       }

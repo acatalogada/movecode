@@ -236,7 +236,9 @@
 
   <div class="controls">
     <p class="help">Setas ou WASD para mover · Espaço pausa<br>No celular: deslize no labirinto ou use o direcional</p>
-    <div style="display:flex; gap:8px">
+    <div style="display:flex; gap:8px; flex-wrap:wrap">
+      <label class="ghost-btn" for="faceInput" style="cursor:pointer">Foto do Bolsonaro</label>
+      <input type="file" id="faceInput" accept="image/*" hidden>
       <button class="ghost-btn" id="pauseBtn">Pausar</button>
       <button class="ghost-btn" id="muteBtn">Som: ligado</button>
     </div>
@@ -306,6 +308,38 @@
   let best = 0;
   try { best = parseInt(localStorage.getItem("claquete-best") || "0", 10) || 0; } catch (e) {}
   function saveBest() { try { localStorage.setItem("claquete-best", String(best)); } catch (e) {} }
+
+  // ---------- Foto do rosto (enviada pelo jogador) ----------
+  let faceImg = null;
+  function loadFace(url) {
+    const im = new Image();
+    im.onload = () => { faceImg = im; };
+    im.src = url;
+  }
+  try { const saved = localStorage.getItem("claquete-face"); if (saved) loadFace(saved); } catch (e) {}
+  document.getElementById("faceInput").addEventListener("change", ev => {
+    const file = ev.target.files && ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const src = new Image();
+      src.onload = () => {
+        // recorte quadrado centralizado, puxado para o alto (onde fica o rosto)
+        const side = Math.min(src.width, src.height);
+        const sx = (src.width - side) / 2;
+        const sy = src.height > src.width ? (src.height - side) * 0.2 : 0;
+        const c = document.createElement("canvas");
+        c.width = c.height = 160;
+        c.getContext("2d").drawImage(src, sx, sy, side, side, 0, 0, 160, 160);
+        const url = c.toDataURL("image/jpeg", 0.85);
+        loadFace(url);
+        try { localStorage.setItem("claquete-face", url); } catch (e) {}
+      };
+      src.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+    ev.target.value = "";
+  });
 
   // ---------- Áudio ----------
   let actx = null, muted = false;
@@ -842,6 +876,23 @@
         c.beginPath(); c.moveTo(-r, r * 0.62); c.lineTo(r, r * 1.2); c.stroke();
       }
       c.restore();
+      if (faceImg) {
+        const R = r * 1.15;
+        c.save();
+        c.beginPath(); c.arc(0, -r * 0.05, R, 0, Math.PI * 2); c.clip();
+        c.drawImage(faceImg, -R, -r * 0.05 - R, R * 2, R * 2);
+        if (g.frightened) {
+          c.globalAlpha = 0.6;
+          c.fillStyle = flashing ? "#f3ede2" : "#3b4cc0";
+          c.fillRect(-R, -r * 0.05 - R, R * 2, R * 2);
+        }
+        c.restore();
+        c.strokeStyle = g.frightened ? "#c9d2ff" : g.color;
+        c.lineWidth = Math.max(1.2, s * 0.06);
+        c.beginPath(); c.arc(0, -r * 0.05, R, 0, Math.PI * 2); c.stroke();
+        c.restore();
+        return;
+      }
       const skin = g.frightened ? (flashing ? "#f3ede2" : "#3b4cc0") : "#e8b38e";
       // orelhas
       c.fillStyle = skin;

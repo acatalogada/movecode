@@ -688,7 +688,7 @@
       p.dir = d; p.face = d; p.moving = true; p.t = 0;
     } else if (p.next && opposite(p.next, p.dir) && !(p.next2 && same(p.next2, p.dir))) {
       reverse(p); p.face = p.dir;
-    } else if (p.t < 0.45 && p.turnedAt !== p.x + "," + p.y) {
+    } else if (p.t < (p.next2 ? 0.45 : 0.65) && (!p.next2 || p.turnedAt !== p.x + "," + p.y)) {
       // tolerância: virou um pouquinho atrasado, ainda conta a curva (uma vez por cruzamento)
       const d = p.next;
       if (d && !same(d, p.dir) && !opposite(d, p.dir) && open(p, d)) {
@@ -913,13 +913,15 @@
 
   function start() {
     audio();
+    try { window.focus(); } catch (e) {}
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     newGame();
   }
 
   function togglePause() {
     if (state === "play") {
       prevState = state; state = "paused";
-      overlay.innerHTML = `<div class="card"><h2>Intervalo</h2><p>O set está em pausa.</p><button class="btn" id="resumeBtn">Voltar ao set</button></div>`;
+      overlay.innerHTML = `<div class="card"><h2>Intervalo</h2><p class="small">Clique no botão ou aperte espaço para voltar.</p><button class="btn" id="resumeBtn">Voltar ao set</button></div>`;
       document.getElementById("resumeBtn").addEventListener("click", togglePause);
       pauseBtn.textContent = "Continuar";
     } else if (state === "paused") {
@@ -1567,7 +1569,7 @@
   };
   zone.addEventListener("pointerup", joyEnd);
   zone.addEventListener("pointercancel", joyEnd);
-  pauseBtn.addEventListener("click", togglePause);
+  pauseBtn.addEventListener("click", () => { togglePause(); try { window.focus(); } catch (e) {} });
   const layoutBtn = document.getElementById("layoutBtn");
   const layoutLabel = () => { layoutBtn.textContent = layout === "vertical" ? "Labirinto: em pé" : "Labirinto: quadrado"; };
   layoutLabel();
@@ -1583,6 +1585,10 @@
   });
   window.addEventListener("resize", resize);
   document.addEventListener("visibilitychange", () => { if (document.hidden && state === "play") togglePause(); });
+  // se o jogo perde o foco do teclado, pausa e avisa, em vez de ignorar as setas em silêncio
+  window.addEventListener("blur", () => { if (state === "play") togglePause(); });
+  // botões não ficam selecionados depois do clique (senão o espaço aciona o botão)
+  document.querySelectorAll(".ghost-btn").forEach(b => b.addEventListener("click", () => setTimeout(() => b.blur(), 0)));
 
   // ---------- Início ----------
   buildGrid();

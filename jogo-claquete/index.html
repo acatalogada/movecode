@@ -204,7 +204,13 @@
   .dpad .left { grid-column: 1; grid-row: 2; }
   .dpad .right { grid-column: 3; grid-row: 2; }
   .dpad .down { grid-column: 2; grid-row: 3; }
-  @media (pointer: coarse) { .dpad { display: grid; } }
+  @media (pointer: coarse) {
+    .dpad { display: grid; grid-template-columns: repeat(3, 64px); grid-template-rows: repeat(3, 50px); }
+    .stage { padding-block: 8px 16px; gap: 8px; }
+    h1 { font-size: 28px; }
+    .slug { display: none; }
+    .hud .v { font-size: 15px; }
+  }
 </style>
 </head>
 <body>
@@ -218,7 +224,7 @@
   <div class="hud" aria-live="polite">
     <div><span class="k">Pontos</span><span class="v" id="score">0</span></div>
     <div><span class="k">Recorde</span><span class="v" id="best">0</span></div>
-    <div><span class="k">Cena / Take</span><span class="v" id="scene">1 / 1</span></div>
+    <div><span class="k">Cena/Take</span><span class="v" id="scene">1 / 1</span></div>
     <div><span class="k">Vidas</span><span id="lives"></span></div>
   </div>
 
@@ -303,7 +309,7 @@
   const muteBtn = document.getElementById("muteBtn");
   const wrap = document.getElementById("wrap");
 
-  let tile = 24, dpr = 1, mazeCanvas = null;
+  let tile = 24, dpr = 1, mazeCanvas = null, viewCols = 21, viewRows = 21;
 
   // ---------- Recorde ----------
   let best = 0;
@@ -730,11 +736,19 @@
   function resize() {
     const availW = wrap.clientWidth;
     const coarse = matchMedia("(pointer: coarse)").matches;
-    const availH = window.innerHeight - (coarse ? 380 : 240);
-    const size = Math.max(250, Math.min(availW, Math.max(availH, 300), 560));
-    tile = Math.floor(size / COLS);
+    const availH = window.innerHeight - 240;
+    // no celular, o labirinto ocupa a largura toda da tela
+    if (coarse && availW < 520) {
+      // no celular: câmera de perto que acompanha a claquete
+      viewCols = 14; viewRows = 14;
+      tile = Math.floor(availW / viewCols);
+    } else {
+      viewCols = COLS; viewRows = ROWS;
+      const size = coarse ? Math.min(availW, 620) : Math.max(250, Math.min(availW, Math.max(availH, 300), 620));
+      tile = Math.floor(size / COLS);
+    }
     dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const W = tile * COLS, H = tile * ROWS;
+    const W = tile * viewCols, H = tile * viewRows;
     canvas.width = W * dpr; canvas.height = H * dpr;
     canvas.style.width = W + "px"; canvas.style.height = H + "px";
     renderMaze();
@@ -1076,9 +1090,18 @@
 
   function draw() {
     const W = tile * COLS, H = tile * ROWS;
+    const VW = tile * viewCols, VH = tile * viewRows;
+    let camX = 0, camY = 0;
+    if (viewCols < COLS || viewRows < ROWS) {
+      const pp = pos(player);
+      camX = Math.max(0, Math.min(W - VW, (pp.x + 0.5) * tile - VW / 2));
+      camY = Math.max(0, Math.min(H - VH, (pp.y + 0.5) * tile - VH / 2));
+      camX = Math.round(camX * dpr) / dpr; camY = Math.round(camY * dpr) / dpr;
+    }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.drawImage(mazeCanvas, 0, 0);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(mazeCanvas, -camX * dpr, -camY * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, -camX * dpr, -camY * dpr);
     ctx.save();
     ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.clip();
 
@@ -1087,17 +1110,17 @@
       const c = grid[y][x];
       const cx = (x + 0.5) * tile, cy = (y + 0.5) * tile;
       if (c === ".") {
-        const w = tile * 0.22, h = tile * 0.16;
+        const w = tile * 0.32, h = tile * 0.24;
         ctx.fillStyle = "#e9d9b4";
         ctx.fillRect(cx - w / 2, cy - h / 2, w, h);
         ctx.fillStyle = C.bg;
         ctx.fillRect(cx - w / 2 + w * 0.2, cy - h / 2 + h * 0.25, w * 0.6, h * 0.5);
       } else if (c === "o") {
-        drawCoffee(ctx, cx, cy, tile * 1.1);
+        drawCoffee(ctx, cx, cy, tile * 1.4);
       }
     }
     if (bonus && (bonus.time > 2 || Math.floor(now * 8) % 2 === 0)) {
-      drawPopcorn(ctx, (bonus.x + 0.5) * tile, (bonus.y + 0.5) * tile, tile * 1.15);
+      drawPopcorn(ctx, (bonus.x + 0.5) * tile, (bonus.y + 0.5) * tile, tile * 1.45);
     }
 
     // relógios
@@ -1105,7 +1128,7 @@
       if (!(state === "dying" && stateTimer < 1.2) && state !== "clear") {
         for (const g of ghosts) {
           const p = pos(g);
-          drawClock(ctx, g, (p.x + 0.5) * tile, (p.y + 0.5) * tile, tile * 1.05);
+          drawClock(ctx, g, (p.x + 0.5) * tile, (p.y + 0.5) * tile, tile * (g.face ? 1.45 : 1.3));
         }
       }
       // claquete
@@ -1113,10 +1136,10 @@
       const cx = (p.x + 0.5) * tile, cy = (p.y + 0.5) * tile;
       if (state === "dying") {
         const k = Math.min(1, (1.6 - stateTimer) / 1.2);
-        drawClapper(ctx, cx, cy, tile * 1.05, player.face, k < 0.2 ? 1 - k * 5 : 0, k * Math.PI * 2, Math.max(0.01, 1 - k));
+        drawClapper(ctx, cx, cy, tile * 1.35, player.face, k < 0.2 ? 1 - k * 5 : 0, k * Math.PI * 2, Math.max(0.01, 1 - k));
       } else {
         const open = (state === "play" && player.moving) ? (Math.sin(now * 20) + 1) / 2 : 0.35;
-        drawClapper(ctx, cx, cy, tile * 1.05, player.face, open);
+        drawClapper(ctx, cx, cy, tile * 1.35, player.face, open);
       }
     }
 

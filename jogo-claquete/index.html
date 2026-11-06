@@ -11,14 +11,14 @@
 <style>
   /* Layout: cinema de desenho animado — paredes de bala, palco roxo, letreiro dourado */
   :root {
-    --bg: #2a1a6b;          /* sala roxa */
-    --board: #170e45;       /* chão do labirinto */
-    --panel: #36238a;
-    --wall: #ff5c8a;        /* paredes cor de bala */
-    --wall-shade: #b62f62;
-    --marquee: #ffd23f;     /* letreiro */
-    --chalk: #fff7ec;
-    --muted: #c4b5ff;
+    --bg: #1c2038;          /* sala de cinema */
+    --board: #12162b;       /* chão do labirinto */
+    --panel: #262b4a;
+    --wall: #4a5d9c;        /* paredes azul-poltrona */
+    --wall-shade: #2c3768;
+    --marquee: #f0c75e;     /* letreiro */
+    --chalk: #f6f1e7;
+    --muted: #a6acc9;
     --red: #e5484d;
     --font-display: "Limelight", "Didot", Georgia, serif;
     --font-script: "Courier Prime", "Courier New", Courier, monospace;
@@ -102,7 +102,7 @@
   canvas#board {
     display: block;
     border-radius: 6px;
-    box-shadow: 0 0 0 3px var(--marquee), 0 16px 40px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 0 0 2px rgba(240, 199, 94, 0.6), 0 16px 40px rgba(0, 0, 0, 0.45);
     touch-action: none;
     max-width: 100%;
   }
@@ -116,7 +116,7 @@
   }
   .card {
     pointer-events: auto;
-    background: rgba(42, 26, 107, 0.95);
+    background: rgba(28, 32, 56, 0.95);
     border: 2px solid var(--marquee);
     border-radius: 6px;
     padding: 18px 20px;
@@ -189,12 +189,13 @@
   .joy {
     display: none;
     position: relative;
-    width: 64px;
-    height: 64px;
+    width: 56px;
+    height: 56px;
+    pointer-events: none;
     border-radius: 50%;
-    background: radial-gradient(circle at 50% 40%, #4a33a8 0%, var(--panel) 75%);
-    border: 3px solid var(--marquee);
-    box-shadow: 0 4px 0 var(--wall-shade), inset 0 0 10px rgba(0, 0, 0, 0.35);
+    background: radial-gradient(circle at 50% 40%, #343a63 0%, var(--panel) 75%);
+    border: 2px solid rgba(240, 199, 94, 0.7);
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.35);
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
@@ -211,9 +212,9 @@
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 28px;
-    height: 28px;
-    margin: -14px 0 0 -14px;
+    width: 24px;
+    height: 24px;
+    margin: -12px 0 0 -12px;
     border-radius: 50%;
     background: radial-gradient(circle at 35% 30%, #ffe08a, var(--marquee) 55%, #b98a22);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);
@@ -221,7 +222,18 @@
     pointer-events: none;
   }
   .joy.active .knob { transition: none; }
+  .joyzone {
+    display: none;
+    width: 100%;
+    height: 84px;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
   @media (pointer: coarse) {
+    .joyzone { display: flex; }
     .joy { display: block; }
     .stage { padding-block: 4px 16px; gap: 6px; }
     header { display: none; }
@@ -253,10 +265,12 @@
     <div id="overlay"></div>
   </div>
 
-  <div class="joy" id="joy" aria-label="Joystick: arraste a bolinha para mover"><div class="knob" id="knob"></div></div>
+  <div class="joyzone" id="joyzone" aria-label="Joystick: encoste e deslize o dedo para mover">
+    <div class="joy" id="joy"><div class="knob" id="knob"></div></div>
+  </div>
 
   <div class="controls">
-    <p class="help">Setas ou WASD para mover · Espaço pausa<br>No celular: arraste a bolinha do joystick ou deslize no labirinto<br>
+    <p class="help">Setas ou WASD para mover · Espaço pausa<br>No celular: encoste o dedo na área do joystick e deslize de leve<br>
     Foto: Alan Santos / PR, Agência Brasil, licença <a href="https://creativecommons.org/licenses/by/3.0/br/" style="color:inherit">CC BY 3.0 BR</a> (recortada)</p>
     <div style="display:flex; gap:8px; flex-wrap:wrap">
       <button class="ghost-btn" id="layoutBtn">Labirinto: quadrado</button>
@@ -560,15 +574,20 @@
       p.dir = d; p.face = d; p.moving = true; p.t = 0;
     } else if (p.next && opposite(p.next, p.dir) && !(p.next2 && same(p.next2, p.dir))) {
       reverse(p); p.face = p.dir;
-    } else if (p.t < 0.5) {
-      // tolerância: virou um pouquinho atrasado, ainda conta a curva
-      const d = wants.find(d => !same(d, p.dir) && !opposite(d, p.dir) && open(p, d));
-      if (d) { p.dir = d; p.face = d; p.t = 0; }
+    } else if (p.t < 0.45 && p.turnedAt !== p.x + "," + p.y) {
+      // tolerância: virou um pouquinho atrasado, ainda conta a curva (uma vez por cruzamento)
+      const d = p.next;
+      if (d && !same(d, p.dir) && !opposite(d, p.dir) && open(p, d)) {
+        p.dir = d; p.face = d; p.t = 0; p.turnedAt = p.x + "," + p.y;
+      }
     }
     advance(p, sp, dt, e => {
       eatAt(e.x, e.y);
       const d = [e.next, e.next2].filter(Boolean).find(d => open(e, d));
-      if (d) { e.dir = d; e.face = d; }
+      if (d) {
+        if (!same(d, e.dir)) e.turnedAt = e.x + "," + e.y;
+        e.dir = d; e.face = d;
+      }
       if (!open(e, e.dir)) e.moving = false;
     });
   }
@@ -814,7 +833,7 @@
     const availW = wrap.clientWidth;
     const coarse = matchMedia("(pointer: coarse)").matches;
     // o labirinto inteiro sempre cabe na tela, sem nada se mexer
-    const availH = Math.max(300, window.innerHeight - (coarse ? 126 : 240));
+    const availH = Math.max(300, window.innerHeight - (coarse ? 140 : 240));
     viewCols = COLS; viewRows = ROWS;
     tile = Math.max(10, Math.floor(Math.min(availW / COLS, availH / ROWS, 32) * 2) / 2);
     dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -874,7 +893,7 @@
       }
     }
     // brilho nas bordas de cima
-    m.strokeStyle = "rgba(255,255,255,0.35)"; m.lineWidth = Math.max(1, tile * 0.06); m.lineCap = "round";
+    m.strokeStyle = "rgba(255,255,255,0.18)"; m.lineWidth = Math.max(1, tile * 0.06); m.lineCap = "round";
     m.beginPath();
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
       if (!isWall(x, y) || isWall(x, y - 1)) continue;
@@ -907,8 +926,8 @@
   function stripedBar(c, x, y, w, h) {
     c.save();
     c.beginPath(); c.rect(x, y, w, h); c.clip();
-    c.fillStyle = "#fff"; c.fillRect(x, y, w, h);
-    c.fillStyle = "#1a1030";
+    c.fillStyle = "#f6f1e7"; c.fillRect(x, y, w, h);
+    c.fillStyle = "#2b2b33";
     const sw = h * 0.9;
     for (let i = -h * 2; i < w + h; i += sw * 2) {
       c.beginPath();
@@ -919,7 +938,7 @@
       c.closePath(); c.fill();
     }
     c.restore();
-    c.strokeStyle = "#fff"; c.lineWidth = Math.max(0.8, h * 0.12);
+    c.strokeStyle = "#f6f1e7"; c.lineWidth = Math.max(0.8, h * 0.12);
     c.strokeRect(x, y, w, h);
   }
 
@@ -935,25 +954,18 @@
     const L = -s * 0.42, W = s * 0.84, top = -s * 0.1, h = s * 0.46;
     // sombra
     c.fillStyle = "rgba(0,0,0,0.3)";
-    roundRect(c, L + s * 0.03, top + s * 0.06, W, h, s * 0.12); c.fill();
+    roundRect(c, L + s * 0.03, top + s * 0.06, W, h, s * 0.08); c.fill();
     // corpo
-    c.fillStyle = "#ff3355";
-    roundRect(c, L, top, W, h, s * 0.12); c.fill();
-    c.strokeStyle = "#fff"; c.lineWidth = Math.max(1, s * 0.055); c.stroke();
-    // olhos
-    for (const ex of [0.02, 0.24]) {
-      c.fillStyle = "#fff";
-      c.beginPath(); c.arc(ex * s, s * 0.07, s * 0.09, 0, Math.PI * 2); c.fill();
-      c.fillStyle = "#1a1030";
-      c.beginPath(); c.arc(ex * s + s * 0.03, s * 0.08, s * 0.05, 0, Math.PI * 2); c.fill();
-      c.fillStyle = "#fff";
-      c.beginPath(); c.arc(ex * s + s * 0.045, s * 0.06, s * 0.016, 0, Math.PI * 2); c.fill();
-    }
-    // bochechas e sorriso
-    c.fillStyle = "rgba(255,190,210,0.75)";
-    c.beginPath(); c.arc(-s * 0.13, s * 0.2, s * 0.05, 0, Math.PI * 2); c.fill();
-    c.strokeStyle = "#fff"; c.lineWidth = Math.max(1, s * 0.045); c.lineCap = "round";
-    c.beginPath(); c.arc(s * 0.13, s * 0.17, s * 0.09, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke();
+    c.fillStyle = "#2b2b33";
+    roundRect(c, L, top, W, h, s * 0.08); c.fill();
+    c.strokeStyle = "#f6f1e7"; c.lineWidth = Math.max(1, s * 0.055); c.stroke();
+    // linhas de giz (CENA / TAKE / ROLO)
+    c.strokeStyle = "rgba(246,241,231,0.85)"; c.lineWidth = Math.max(0.7, s * 0.03);
+    c.beginPath();
+    c.moveTo(L + s * 0.07, top + h * 0.38); c.lineTo(L + W - s * 0.07, top + h * 0.38);
+    c.moveTo(L + s * 0.07, top + h * 0.7); c.lineTo(L + W - s * 0.07, top + h * 0.7);
+    c.moveTo(0, top + h * 0.38); c.lineTo(0, top + h * 0.9);
+    c.stroke();
     // haste fixa
     stripedBar(c, L, -s * 0.22, W, s * 0.12);
     // haste móvel (dobradiça à esquerda)
@@ -1300,38 +1312,41 @@
   }, { passive: false });
   canvas.addEventListener("touchend", () => { touch0 = null; });
 
-  // joystick: arraste a bolinha, a direção mais forte vira o movimento
-  const joy = document.getElementById("joy"), knob = document.getElementById("knob");
-  let joyId = null, joyDir = null;
+  // joystick: a direção vale a partir de onde o dedo encostou; um deslize curto já vira
+  const zone = document.getElementById("joyzone"), joy = document.getElementById("joy"), knob = document.getElementById("knob");
+  let joyId = null, joyDir = null, ox = 0, oy = 0;
+  const DEAD = 6, LEASH = 16;
   function joyMove(e) {
-    const r = joy.getBoundingClientRect();
-    let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-    const max = r.width / 2 - 10, len = Math.hypot(dx, dy);
-    if (len > max) { dx = dx / len * max; dy = dy / len * max; }
-    knob.style.transform = `translate(${dx}px, ${dy}px)`;
-    if (len > 4) {
+    let dx = e.clientX - ox, dy = e.clientY - oy;
+    let len = Math.hypot(dx, dy);
+    // a origem acompanha o dedo, então trocar de direção pede pouco movimento
+    if (len > LEASH) {
+      ox = e.clientX - dx / len * LEASH; oy = e.clientY - dy / len * LEASH;
+      dx = e.clientX - ox; dy = e.clientY - oy; len = LEASH;
+    }
+    knob.style.transform = `translate(${dx / LEASH * 14}px, ${dy / LEASH * 14}px)`;
+    if (len > DEAD) {
       const h = dx > 0 ? "right" : "left", v = dy > 0 ? "down" : "up";
       const ax = Math.abs(dx), ay = Math.abs(dy);
       const main = ax > ay ? h : v, other = ax > ay ? v : h;
-      // na diagonal, guarda as duas direções: vira para a que estiver livre
-      const diag = Math.min(ax, ay) > Math.max(ax, ay) * 0.4;
+      const diag = Math.min(ax, ay) > Math.max(ax, ay) * 0.5;
       const key = main + (diag ? other : "");
       if (key !== joyDir) { joyDir = key; steer(main, diag ? other : null); }
     }
   }
-  joy.addEventListener("pointerdown", e => {
+  zone.addEventListener("pointerdown", e => {
     e.preventDefault(); audio();
-    joyId = e.pointerId; joyDir = null;
-    try { joy.setPointerCapture(e.pointerId); } catch (err) {}
-    joy.classList.add("active"); joyMove(e);
+    joyId = e.pointerId; joyDir = null; ox = e.clientX; oy = e.clientY;
+    try { zone.setPointerCapture(e.pointerId); } catch (err) {}
+    joy.classList.add("active");
   });
-  joy.addEventListener("pointermove", e => { if (e.pointerId === joyId) { e.preventDefault(); joyMove(e); } });
+  zone.addEventListener("pointermove", e => { if (e.pointerId === joyId) { e.preventDefault(); joyMove(e); } });
   const joyEnd = e => {
     if (e.pointerId !== joyId) return;
     joyId = null; joyDir = null; joy.classList.remove("active"); knob.style.transform = "";
   };
-  joy.addEventListener("pointerup", joyEnd);
-  joy.addEventListener("pointercancel", joyEnd);
+  zone.addEventListener("pointerup", joyEnd);
+  zone.addEventListener("pointercancel", joyEnd);
   pauseBtn.addEventListener("click", togglePause);
   const layoutBtn = document.getElementById("layoutBtn");
   const layoutLabel = () => { layoutBtn.textContent = layout === "vertical" ? "Labirinto: em pé" : "Labirinto: quadrado"; };

@@ -205,9 +205,11 @@
   .dpad .right { grid-column: 3; grid-row: 2; }
   .dpad .down { grid-column: 2; grid-row: 3; }
   @media (pointer: coarse) {
-    .dpad { display: grid; grid-template-columns: repeat(3, 64px); grid-template-rows: repeat(3, 50px); }
-    .stage { padding-block: 8px 16px; gap: 8px; }
-    h1 { font-size: 28px; }
+    .dpad { display: grid; grid-template-columns: repeat(4, minmax(0, 72px)); grid-template-rows: 52px; width: 100%; }
+    .dpad .left, .dpad .up, .dpad .down, .dpad .right { grid-row: 1; }
+    .dpad .left { grid-column: 1; } .dpad .up { grid-column: 2; } .dpad .down { grid-column: 3; } .dpad .right { grid-column: 4; }
+    .stage { padding-block: 6px 16px; gap: 6px; }
+    h1 { font-size: 22px; }
     .slug { display: none; }
     .hud .v { font-size: 15px; }
   }
@@ -244,6 +246,7 @@
     <p class="help">Setas ou WASD para mover · Espaço pausa<br>No celular: deslize no labirinto ou use o direcional<br>
     Foto: Alan Santos / PR, Agência Brasil, licença <a href="https://creativecommons.org/licenses/by/3.0/br/" style="color:inherit">CC BY 3.0 BR</a> (recortada)</p>
     <div style="display:flex; gap:8px; flex-wrap:wrap">
+      <button class="ghost-btn" id="layoutBtn">Labirinto: quadrado</button>
       <label class="ghost-btn" for="faceInput" style="cursor:pointer">Trocar foto</label>
       <input type="file" id="faceInput" accept="image/*" hidden>
       <button class="ghost-btn" id="pauseBtn">Pausar</button>
@@ -256,7 +259,7 @@
 (() => {
   // ---------- Mapa (original) ----------
   // # parede  . fotograma  o café  - porta do camarim  G camarim  P claquete
-  const MAP = [
+  const MAP_CLASSIC = [
     "#####################",
     "#.........#.........#",
     "#o###.###.#.###.###o#",
@@ -279,10 +282,54 @@
     "#...................#",
     "#####################",
   ];
-  const COLS = 21, ROWS = 21;
-  const START = { x: 10, y: 15 };
-  const DOOR_OUT = { x: 10, y: 7 };
-  const HOUSE_Y = 9;
+  // Labirinto em pé, para caber inteiro na tela do celular
+  const MAP_VERTICAL = [
+    "###############",
+    "#......#......#",
+    "#o##.#.#.#.##o#",
+    "#.............#",
+    "#.##.#####.##.#",
+    "#....#...#....#",
+    "####.#.#.#.####",
+    "#......#......#",
+    "#.##.......##.#",
+    "#.##.##-##.##.#",
+    "    .#GGG#.    ",
+    "#.##.#####.##.#",
+    "#.##.......##.#",
+    "#......#......#",
+    "####.#.#.#.####",
+    "#....#...#....#",
+    "#.##.#.#.#.##.#",
+    "#o.....P.....o#",
+    "#.##.##.##.##.#",
+    "#.............#",
+    "#.####.#.####.#",
+    "#.............#",
+    "###############",
+  ];
+  let MAP, COLS, ROWS, START, DOOR, DOOR_OUT, HOUSE_Y, HOUSE_SLOTS, TUNNEL_Y, TUNNEL_EDGE;
+  let layout = "classic";
+  function setLayout(name) {
+    layout = name;
+    MAP = name === "vertical" ? MAP_VERTICAL : MAP_CLASSIC;
+    ROWS = MAP.length; COLS = MAP[0].length;
+    const g = [];
+    MAP.forEach((row, y) => row.split("").forEach((c, x) => {
+      if (c === "P") START = { x, y };
+      if (c === "-") DOOR = { x, y };
+      if (c === "G") g.push(x);
+    }));
+    DOOR_OUT = { x: DOOR.x, y: DOOR.y - 1 };
+    HOUSE_Y = DOOR.y + 1;
+    HOUSE_SLOTS = [DOOR.x, g[0], g[g.length - 1]];
+    TUNNEL_Y = MAP.findIndex(r => r[0] !== "#");
+    TUNNEL_EDGE = TUNNEL_Y >= 0 ? MAP[TUNNEL_Y].search(/[^ ]/) : 0;
+  }
+  const coarseNarrow = () => matchMedia("(pointer: coarse)").matches && window.innerWidth < 600;
+  let savedLayout = null;
+  try { savedLayout = localStorage.getItem("claquete-layout"); } catch (e) {}
+  setLayout(savedLayout || (coarseNarrow() ? "vertical" : "classic"));
   const D = {
     up: { x: 0, y: -1 }, down: { x: 0, y: 1 },
     left: { x: -1, y: 0 }, right: { x: 1, y: 0 },
@@ -404,10 +451,10 @@
   const SCHEDULE = [7, 20, 7, 20, 5, Infinity]; // dispersão, perseguição...
 
   const GHOST_DEFS = [
-    { name: "Despertador", color: "#e5484d", corner: { x: COLS - 2, y: -2 } },
-    { name: "Cronômetro", color: "#b98cf5", corner: { x: 1, y: -2 } },
-    { name: "Ampulheta", color: "#3fc1b0", corner: { x: COLS - 1, y: ROWS + 1 } },
-    { name: "Bolsonaro", color: "#f08c3a", face: true, corner: { x: 0, y: ROWS + 1 } },
+    { name: "Despertador", color: "#e5484d" },
+    { name: "Cronômetro", color: "#b98cf5" },
+    { name: "Ampulheta", color: "#3fc1b0" },
+    { name: "Bolsonaro", color: "#f08c3a", face: true },
   ];
 
   function speeds() {
@@ -444,9 +491,10 @@
     player = { x: START.x, y: START.y, dir: D.left, face: D.left, t: 0, moving: false, next: null };
     const release = [0, 1.2, 4, 7.5].map(v => v / (1 + (level - 1) * 0.3));
     ghosts = GHOST_DEFS.map((d, i) => {
-      const g = { ...d, i, t: 0, frightened: false, moving: false, release: release[i] };
+      const corner = [{ x: COLS - 2, y: -2 }, { x: 1, y: -2 }, { x: COLS - 1, y: ROWS + 1 }, { x: 0, y: ROWS + 1 }][i];
+      const g = { ...d, corner, i, t: 0, frightened: false, moving: false, release: release[i] };
       if (i === 0) Object.assign(g, { x: DOOR_OUT.x, y: DOOR_OUT.y, dir: D.left, state: "active", moving: true });
-      else Object.assign(g, { x: [10, 9, 11][i - 1], y: HOUSE_Y, dir: D.up, state: "house" });
+      else Object.assign(g, { x: HOUSE_SLOTS[i - 1], y: HOUSE_Y, dir: D.up, state: "house" });
       return g;
     });
     frightTimer = 0; chain = 0; modeIdx = 0; modeTimer = 0; lifeClock = 0;
@@ -589,7 +637,7 @@
       if (g.state === "eaten" || g.state === "entering") s = sp.eyes;
       else if (g.state === "leaving") s = sp.house;
       else if (g.frightened) s = sp.fright;
-      if (g.state === "active" && g.y === HOUSE_Y && (g.x <= 4 || g.x >= 16)) s = Math.min(s, sp.tunnel);
+      if (g.state === "active" && g.y === TUNNEL_Y && (g.x < TUNNEL_EDGE || g.x >= COLS - TUNNEL_EDGE)) s = Math.min(s, sp.tunnel);
       advance(g, s, dt, ghostOnTile);
     }
   }
@@ -736,17 +784,10 @@
   function resize() {
     const availW = wrap.clientWidth;
     const coarse = matchMedia("(pointer: coarse)").matches;
-    const availH = window.innerHeight - 240;
-    // no celular, o labirinto ocupa a largura toda da tela
-    if (coarse && availW < 520) {
-      // no celular: câmera de perto que acompanha a claquete
-      viewCols = 14; viewRows = 14;
-      tile = Math.floor(availW / viewCols);
-    } else {
-      viewCols = COLS; viewRows = ROWS;
-      const size = coarse ? Math.min(availW, 620) : Math.max(250, Math.min(availW, Math.max(availH, 300), 620));
-      tile = Math.floor(size / COLS);
-    }
+    // o labirinto inteiro sempre cabe na tela, sem nada se mexer
+    const availH = Math.max(300, window.innerHeight - (coarse ? 195 : 240));
+    viewCols = COLS; viewRows = ROWS;
+    tile = Math.max(10, Math.floor(Math.min(availW / COLS, availH / ROWS, 32)));
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     const W = tile * viewCols, H = tile * viewRows;
     canvas.width = W * dpr; canvas.height = H * dpr;
@@ -795,14 +836,14 @@
     m.stroke();
     m.globalAlpha = 1;
     // porta do camarim
-    const dx = 10 * tile, dy = 8 * tile;
+    const dx = DOOR.x * tile, dy = DOOR.y * tile;
     m.fillStyle = "#e89ab0";
     m.fillRect(dx, dy + tile * 0.42, tile, tile * 0.16);
     // placa do camarim
     m.fillStyle = "rgba(243,237,226,0.5)";
     m.font = `${Math.max(7, tile * 0.32)}px "Courier Prime", monospace`;
     m.textAlign = "center"; m.textBaseline = "middle";
-    m.fillText("CAMARIM", 10.5 * tile, 10.5 * tile);
+    m.fillText("CAMARIM", (DOOR.x + 0.5) * tile, (HOUSE_Y + 1.5) * tile);
   }
 
   function roundRect(c, x, y, w, h, r) {
@@ -1207,6 +1248,15 @@
     b.addEventListener("pointerdown", e => { e.preventDefault(); audio(); steer(b.dataset.dir); });
   });
   pauseBtn.addEventListener("click", togglePause);
+  const layoutBtn = document.getElementById("layoutBtn");
+  const layoutLabel = () => { layoutBtn.textContent = layout === "vertical" ? "Labirinto: em pé" : "Labirinto: quadrado"; };
+  layoutLabel();
+  layoutBtn.addEventListener("click", () => {
+    setLayout(layout === "vertical" ? "classic" : "vertical");
+    try { localStorage.setItem("claquete-layout", layout); } catch (e) {}
+    layoutLabel();
+    state = "title"; buildGrid(); resetPositions(); resize(); updateHud(); titleScreen();
+  });
   muteBtn.addEventListener("click", () => {
     muted = !muted; muteBtn.textContent = muted ? "Som: desligado" : "Som: ligado";
     if (!muted) audio();

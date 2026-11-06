@@ -183,35 +183,50 @@
     font-size: 13px;
   }
   .help { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
-  .dpad {
+  .joy {
     display: none;
-    grid-template-columns: repeat(3, 58px);
-    grid-template-rows: repeat(3, 52px);
-    gap: 6px;
-    justify-content: center;
-    user-select: none;
-  }
-  .dpad button {
-    background: #1d1926;
-    color: var(--chalk);
-    border: 1px solid rgba(243, 237, 226, 0.3);
-    border-radius: 8px;
-    font-size: 22px;
+    position: relative;
+    width: 116px;
+    height: 116px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, #241f2e 0%, #17141e 70%);
+    border: 2px solid rgba(242, 193, 78, 0.45);
+    box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.6);
     touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    flex: none;
   }
-  .dpad button:active { background: var(--marquee); color: #1a1406; }
-  .dpad .up { grid-column: 2; grid-row: 1; }
-  .dpad .left { grid-column: 1; grid-row: 2; }
-  .dpad .right { grid-column: 3; grid-row: 2; }
-  .dpad .down { grid-column: 2; grid-row: 3; }
+  .joy::before {
+    content: "";
+    position: absolute;
+    inset: 22%;
+    border-radius: 50%;
+    border: 1px dashed rgba(243, 237, 226, 0.18);
+  }
+  .knob {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 50px;
+    height: 50px;
+    margin: -25px 0 0 -25px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffe08a, var(--marquee) 55%, #b98a22);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);
+    transition: transform 0.12s ease-out;
+    pointer-events: none;
+  }
+  .joy.active .knob { transition: none; }
   @media (pointer: coarse) {
-    .dpad { display: grid; grid-template-columns: repeat(4, minmax(0, 72px)); grid-template-rows: 52px; width: 100%; }
-    .dpad .left, .dpad .up, .dpad .down, .dpad .right { grid-row: 1; }
-    .dpad .left { grid-column: 1; } .dpad .up { grid-column: 2; } .dpad .down { grid-column: 3; } .dpad .right { grid-column: 4; }
-    .stage { padding-block: 6px 16px; gap: 6px; }
-    h1 { font-size: 22px; }
-    .slug { display: none; }
-    .hud .v { font-size: 15px; }
+    .joy { display: block; }
+    .stage { padding-block: 4px 16px; gap: 6px; }
+    header { display: none; }
+    .hud > div { padding: 3px 7px; }
+    .hud .k { font-size: 9px; }
+    .hud .v { font-size: 14px; }
+    #lives { height: 18px; }
+    #lives canvas { width: 16px; height: 16px; }
   }
 </style>
 </head>
@@ -235,15 +250,10 @@
     <div id="overlay"></div>
   </div>
 
-  <div class="dpad" id="dpad">
-    <button class="up" data-dir="up" aria-label="Cima">▲</button>
-    <button class="left" data-dir="left" aria-label="Esquerda">◀</button>
-    <button class="right" data-dir="right" aria-label="Direita">▶</button>
-    <button class="down" data-dir="down" aria-label="Baixo">▼</button>
-  </div>
+  <div class="joy" id="joy" aria-label="Joystick: arraste a bolinha para mover"><div class="knob" id="knob"></div></div>
 
   <div class="controls">
-    <p class="help">Setas ou WASD para mover · Espaço pausa<br>No celular: deslize no labirinto ou use o direcional<br>
+    <p class="help">Setas ou WASD para mover · Espaço pausa<br>No celular: arraste a bolinha do joystick ou deslize no labirinto<br>
     Foto: Alan Santos / PR, Agência Brasil, licença <a href="https://creativecommons.org/licenses/by/3.0/br/" style="color:inherit">CC BY 3.0 BR</a> (recortada)</p>
     <div style="display:flex; gap:8px; flex-wrap:wrap">
       <button class="ghost-btn" id="layoutBtn">Labirinto: quadrado</button>
@@ -738,7 +748,7 @@
   function titleScreen() {
     overlay.innerHTML = `
       <div class="card">
-        <h2>Silêncio no set</h2>
+        <h2>Claquete em Fuga</h2>
         <p>Você é a claquete. Recolha todos os fotogramas do estúdio antes que os despertadores, e o Bolsonaro, alcancem você.</p>
         <p class="small">Uma xícara de café deixa os perseguidores lentos por alguns segundos. Aproveite para pegá-los. A pipoca vale bônus.</p>
         <button class="btn" id="startBtn">Ação!</button>
@@ -785,9 +795,9 @@
     const availW = wrap.clientWidth;
     const coarse = matchMedia("(pointer: coarse)").matches;
     // o labirinto inteiro sempre cabe na tela, sem nada se mexer
-    const availH = Math.max(300, window.innerHeight - (coarse ? 195 : 240));
+    const availH = Math.max(300, window.innerHeight - (coarse ? 182 : 240));
     viewCols = COLS; viewRows = ROWS;
-    tile = Math.max(10, Math.floor(Math.min(availW / COLS, availH / ROWS, 32)));
+    tile = Math.max(10, Math.floor(Math.min(availW / COLS, availH / ROWS, 32) * 2) / 2);
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     const W = tile * viewCols, H = tile * viewRows;
     canvas.width = W * dpr; canvas.height = H * dpr;
@@ -1244,9 +1254,33 @@
   }, { passive: false });
   canvas.addEventListener("touchend", () => { touch0 = null; });
 
-  document.querySelectorAll("#dpad button").forEach(b => {
-    b.addEventListener("pointerdown", e => { e.preventDefault(); audio(); steer(b.dataset.dir); });
+  // joystick: arraste a bolinha, a direção mais forte vira o movimento
+  const joy = document.getElementById("joy"), knob = document.getElementById("knob");
+  let joyId = null, joyDir = null;
+  function joyMove(e) {
+    const r = joy.getBoundingClientRect();
+    let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    const max = r.width / 2 - 22, len = Math.hypot(dx, dy);
+    if (len > max) { dx = dx / len * max; dy = dy / len * max; }
+    knob.style.transform = `translate(${dx}px, ${dy}px)`;
+    if (len > 12) {
+      const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up");
+      if (d !== joyDir) { joyDir = d; steer(d); }
+    }
+  }
+  joy.addEventListener("pointerdown", e => {
+    e.preventDefault(); audio();
+    joyId = e.pointerId; joyDir = null;
+    try { joy.setPointerCapture(e.pointerId); } catch (err) {}
+    joy.classList.add("active"); joyMove(e);
   });
+  joy.addEventListener("pointermove", e => { if (e.pointerId === joyId) { e.preventDefault(); joyMove(e); } });
+  const joyEnd = e => {
+    if (e.pointerId !== joyId) return;
+    joyId = null; joyDir = null; joy.classList.remove("active"); knob.style.transform = "";
+  };
+  joy.addEventListener("pointerup", joyEnd);
+  joy.addEventListener("pointercancel", joyEnd);
   pauseBtn.addEventListener("click", togglePause);
   const layoutBtn = document.getElementById("layoutBtn");
   const layoutLabel = () => { layoutBtn.textContent = layout === "vertical" ? "Labirinto: em pé" : "Labirinto: quadrado"; };

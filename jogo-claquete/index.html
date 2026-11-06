@@ -407,6 +407,56 @@
       "#.............#",
       "###############",
     ],
+    [
+      "###############",
+      "#......#......#",
+      "#.##.#.#.#.##.#",
+      "#o#..#...#..#o#",
+      "#.#.##.#.##.#.#",
+      "#.............#",
+      "##.#.#####.#.##",
+      "#..#.......#..#",
+      "#.##.......##.#",
+      "#.##.##-##.##.#",
+      "    .#GGG#.    ",
+      "#.##.#####.##.#",
+      "#.##.......##.#",
+      "#....#.#.#....#",
+      "##.#.#...#.#.##",
+      "#..#.......#..#",
+      "#.##.#.#.#.##.#",
+      "#o.....P.....o#",
+      "#.##.#.#.#.##.#",
+      "#....#...#....#",
+      "#.##...#...##.#",
+      "#....#...#....#",
+      "###############",
+    ],
+    [
+      "###############",
+      "#.............#",
+      "#.#.#.###.#.#.#",
+      "#o#.#.....#.#o#",
+      "#...##.#.##...#",
+      "###....#....###",
+      "#...##...##...#",
+      "#.#.........#.#",
+      "#.##.......##.#",
+      "#.##.##-##.##.#",
+      "    .#GGG#.    ",
+      "#.##.#####.##.#",
+      "#.#.........#.#",
+      "#...#.#.#.#...#",
+      "###.#.#.#.#.###",
+      "#.............#",
+      "#.#.###.###.#.#",
+      "#o#....P....#o#",
+      "#.#.#.#.#.#.#.#",
+      "#...#.#.#.#...#",
+      "#.###.....###.#",
+      "#.............#",
+      "###############",
+    ],
   ];
   const MAPS_CLASSIC = [MAP_CLASSIC,
     [
@@ -623,9 +673,10 @@
   function resetPositions() {
     player = { x: START.x, y: START.y, dir: D.left, face: D.left, hflip: true, t: 0, moving: false, next: null };
     const release = [0, 4, 9, 14].map(v => v / (1 + (level - 1) * 0.4));
-    ghosts = GHOST_DEFS.map((d, i) => {
+    const cast = [...scene().cast.map(([kind, color]) => ({ kind, color })), { kind: "face", color: "#f08c3a", face: true }];
+    ghosts = cast.slice(0, 4).map((d, i) => {
       const corner = [{ x: COLS - 2, y: -2 }, { x: 1, y: -2 }, { x: COLS - 1, y: ROWS + 1 }, { x: 0, y: ROWS + 1 }][i];
-      const g = { ...d, corner, i, t: 0, kind: d.face ? "face" : scene().kind, color: d.face ? d.color : scene().colors[i], frightened: false, moving: false, release: release[i] };
+      const g = { ...d, corner, i, t: 0, frightened: false, moving: false, release: release[i] };
       if (i === 0) Object.assign(g, { x: DOOR_OUT.x, y: DOOR_OUT.y, dir: D.left, state: "active", moving: true });
       else Object.assign(g, { x: HOUSE_SLOTS[i - 1], y: HOUSE_Y, dir: D.up, state: "house" });
       return g;
@@ -640,18 +691,21 @@
   }
 
   // cada cena traz um elenco novo de perseguidores e outra cor de cenário
+  const FINAL_SCENE = 6;
   const SCENES = [
-    { kind: "clock", name: "Despertadores", wall: "#5868cf", shade: "#323d85", colors: ["#e5484d", "#b98cf5", "#3fc1b0"] },
-    { kind: "camera", name: "Câmeras", wall: "#2fa184", shade: "#1b6150", colors: ["#f08c3a", "#6cb6ff", "#e86fb0"] },
-    { kind: "reel", name: "Rolos de filme", wall: "#9a5cc2", shade: "#5c3679", colors: ["#f2c14e", "#4fd1c5", "#ff7a6b"] },
-    { kind: "mega", name: "Megafones", wall: "#de8f3c", shade: "#8c5821", colors: ["#e5484d", "#7c8cff", "#5fd18a"] },
+    { name: "Escala 6x1", wall: "#5868cf", shade: "#323d85", cast: [["clock", "#e5484d"], ["sixone", "#3fa7e0"]] },
+    { name: "Câmeras ligadas", wall: "#2fa184", shade: "#1b6150", cast: [["camera", "#f08c3a"], ["clock", "#b98cf5"], ["sixone", "#e86fb0"]] },
+    { name: "Rolos e câmeras", wall: "#9a5cc2", shade: "#5c3679", cast: [["reel", "#f2c14e"], ["camera", "#6cb6ff"], ["sixone", "#ff7a6b"]] },
+    { name: "Megafones no set", wall: "#de8f3c", shade: "#8c5821", cast: [["mega", "#e5484d"], ["reel", "#4fd1c5"], ["clock", "#7c8cff"]] },
+    { name: "Gravação noturna", wall: "#c4506c", shade: "#7a2d43", cast: [["sixone", "#5fd18a"], ["mega", "#7c8cff"], ["camera", "#f2c14e"]] },
+    { name: "Cena final", wall: "#3f8fc0", shade: "#24587a", cast: [["clock", "#ff7a6b"], ["mega", "#f2c14e"], ["reel", "#b98cf5"], ["sixone", "#5fd18a"]] },
   ];
   const scene = () => SCENES[(level - 1) % SCENES.length];
 
   function toReady() {
     state = "ready"; stateTimer = take === 1 ? 2.4 : 2.0;
     renderMaze();
-    showFlash(`Cena ${level} · Take ${take}`, take === 1 ? `${scene().name} no set · Ação!` : "Ação!");
+    showFlash(`Cena ${level} de ${FINAL_SCENE}`, take === 1 ? `${scene().name} · Ação!` : `Take ${take} · Ação!`);
     clap();
     updateHud();
   }
@@ -731,7 +785,7 @@
       nextLife += 5000; lives++;
       addPopup(x, y, "+1 vida", "#7ee08a"); sfx.bonus();
     }
-    if (dotsLeft <= 0) { state = "clear"; stateTimer = 2.4; sfx.clear(); showFlash("Cena aprovada!", `Próxima: ${SCENES[level % SCENES.length].name}`); }
+    if (dotsLeft <= 0) { state = "clear"; stateTimer = 2.4; sfx.clear(); showFlash(level >= FINAL_SCENE ? "Última cena aprovada!" : "Cena aprovada!", level >= FINAL_SCENE ? "Corta! É um filme!" : `Próxima: ${SCENES[level % SCENES.length].name}`); }
     updateHud();
   }
 
@@ -856,7 +910,10 @@
     }
     if (state === "clear") {
       stateTimer -= dt;
-      if (stateTimer <= 0) { level++; take = 1; buildGrid(); resetPositions(); toReady(); }
+      if (stateTimer <= 0) {
+        if (level >= FINAL_SCENE) return premiere();
+        level++; take = 1; buildGrid(); resetPositions(); toReady();
+      }
       return;
     }
     if (state !== "play") return;
@@ -881,6 +938,23 @@
     if (state !== "play") return;
     updateGhosts(dt);
     checkCollisions();
+  }
+
+  function premiere() {
+    state = "won";
+    const bonusLives = lives * 1000;
+    score += bonusLives;
+    const record = score > best;
+    if (record) { best = score; saveBest(); }
+    updateHud(); sfx.clear();
+    overlay.innerHTML = `
+      <div class="card">
+        <h2>Filme <span>pronto!</span></h2>
+        <p>Estreia com <b>${score}</b> pontos.</p>
+        <p class="small">Bônus de ${lives} ${lives === 1 ? "vida" : "vidas"}: +${bonusLives}${record ? " · Novo recorde!" : ""}</p>
+        <button class="btn" id="startBtn">Novo filme</button>
+      </div>`;
+    document.getElementById("startBtn").addEventListener("click", start);
   }
 
   function gameOver() {
@@ -1264,6 +1338,24 @@
         c.moveTo(r * 0.6 * flip, r * 0.0); c.lineTo(r * 1.05 * flip, -r * 0.18);
         c.lineTo(r * 1.05 * flip, r * 0.62); c.lineTo(r * 0.6 * flip, r * 0.45); c.closePath(); c.fill();
         c.translate(-r * 0.15 * flip, r * 0.08);
+      } else if (g.kind === "sixone") {
+        // folhinha de calendário com a escala 6x1
+        c.fillStyle = "rgba(0,0,0,0.25)";
+        roundRect(c, -r * 0.78, -r * 0.62, r * 1.62, r * 1.66, r * 0.18); c.fill();
+        c.fillStyle = g.frightened ? "#c9d2ff" : "#fff4e0";
+        roundRect(c, -r * 0.82, -r * 0.7, r * 1.64, r * 1.62, r * 0.18); c.fill();
+        c.fillStyle = body;
+        roundRect(c, -r * 0.82, -r * 0.7, r * 1.64, r * 0.5, r * 0.18); c.fill();
+        c.fillRect(-r * 0.82, -r * 0.4, r * 1.64, r * 0.2);
+        c.fillStyle = dark;
+        for (const x of [-0.42, 0.42]) { roundRect(c, x * r - r * 0.07, -r * 0.88, r * 0.14, r * 0.34, r * 0.06); c.fill(); }
+        if (!g.frightened) {
+          c.fillStyle = "#d43d4f";
+          c.font = `700 ${r * 0.62}px Fredoka, Nunito, sans-serif`;
+          c.textAlign = "center"; c.textBaseline = "middle";
+          c.fillText("6x1", 0, r * 0.58);
+        }
+        c.translate(0, -r * 0.02);
       } else if (g.kind === "reel") {
         // rolo de filme girando
         c.fillStyle = body;
@@ -1289,8 +1381,9 @@
         c.translate(-r * 0.15 * flip, 0);
       }
     }
-    const small = g.kind === "reel" ? 0.8 : 1;
-    drawEyes(c, g, r, r * 0.26 * small, -r * 0.08, r * 0.17 * small, flashing, eyesOnly);
+    const small = g.kind === "reel" ? 0.8 : g.kind === "sixone" ? 0.85 : 1;
+    const eyeY = g.kind === "sixone" && !eyesOnly ? r * 0.06 : -r * 0.08;
+    drawEyes(c, g, r, r * 0.26 * small, eyeY, r * 0.17 * small, flashing, eyesOnly);
     c.restore();
   }
 
@@ -1509,11 +1602,11 @@
   window.addEventListener("keydown", e => {
     if (KEYMAP[e.key]) {
       e.preventDefault();
-      if (state === "title" || state === "over") return;
+      if (state === "title" || state === "over" || state === "won") return;
       steer(KEYMAP[e.key]);
     } else if (e.key === " " || e.key === "p" || e.key === "P" || e.key === "Escape") {
       if (state === "play" || state === "paused") { e.preventDefault(); togglePause(); }
-    } else if (e.key === "Enter" && (state === "title" || state === "over")) {
+    } else if (e.key === "Enter" && (state === "title" || state === "over" || state === "won")) {
       e.preventDefault(); start();
     }
   });

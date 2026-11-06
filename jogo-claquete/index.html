@@ -186,8 +186,8 @@
   .joy {
     display: none;
     position: relative;
-    width: 116px;
-    height: 116px;
+    width: 84px;
+    height: 84px;
     border-radius: 50%;
     background: radial-gradient(circle at 50% 50%, #241f2e 0%, #17141e 70%);
     border: 2px solid rgba(242, 193, 78, 0.45);
@@ -208,9 +208,9 @@
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 50px;
-    height: 50px;
-    margin: -25px 0 0 -25px;
+    width: 36px;
+    height: 36px;
+    margin: -18px 0 0 -18px;
     border-radius: 50%;
     background: radial-gradient(circle at 35% 30%, #ffe08a, var(--marquee) 55%, #b98a22);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);
@@ -795,7 +795,7 @@
     const availW = wrap.clientWidth;
     const coarse = matchMedia("(pointer: coarse)").matches;
     // o labirinto inteiro sempre cabe na tela, sem nada se mexer
-    const availH = Math.max(300, window.innerHeight - (coarse ? 182 : 240));
+    const availH = Math.max(300, window.innerHeight - (coarse ? 148 : 240));
     viewCols = COLS; viewRows = ROWS;
     tile = Math.max(10, Math.floor(Math.min(availW / COLS, availH / ROWS, 32) * 2) / 2);
     dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -1260,10 +1260,10 @@
   function joyMove(e) {
     const r = joy.getBoundingClientRect();
     let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-    const max = r.width / 2 - 22, len = Math.hypot(dx, dy);
+    const max = r.width / 2 - 14, len = Math.hypot(dx, dy);
     if (len > max) { dx = dx / len * max; dy = dy / len * max; }
     knob.style.transform = `translate(${dx}px, ${dy}px)`;
-    if (len > 12) {
+    if (len > 5) {
       const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up");
       if (d !== joyDir) { joyDir = d; steer(d); }
     }

@@ -186,8 +186,8 @@
   .joy {
     display: none;
     position: relative;
-    width: 84px;
-    height: 84px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     background: radial-gradient(circle at 50% 50%, #241f2e 0%, #17141e 70%);
     border: 2px solid rgba(242, 193, 78, 0.45);
@@ -208,9 +208,9 @@
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 36px;
-    height: 36px;
-    margin: -18px 0 0 -18px;
+    width: 28px;
+    height: 28px;
+    margin: -14px 0 0 -14px;
     border-radius: 50%;
     background: radial-gradient(circle at 35% 30%, #ffe08a, var(--marquee) 55%, #b98a22);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);
@@ -452,7 +452,7 @@
 
   // ---------- Estado ----------
   let grid, dotsLeft, dotsEaten;
-  let score = 0, lives = 3, level = 1, take = 1;
+  let score = 0, lives = 5, level = 1, take = 1, nextLife = 4000;
   let state = "title"; // title | ready | play | dying | clear | over | paused
   let stateTimer = 0, prevState = null;
   let player, ghosts, frightTimer = 0, chain = 0, freeze = 0;
@@ -468,17 +468,17 @@
   ];
 
   function speeds() {
-    const k = 1 + Math.min(level - 1, 6) * 0.05;
+    const k = 1 + Math.min(level - 1, 6) * 0.03;
     return {
       player: 5.0 * k,
-      ghost: 4.5 * k,
-      fright: 2.8,
+      ghost: 3.6 * k,
+      fright: 2.2,
       tunnel: 2.5,
       eyes: 11,
       house: 2.5,
     };
   }
-  function frightDuration() { return Math.max(2, 7.5 - (level - 1) * 0.8); }
+  function frightDuration() { return Math.max(4, 9.5 - (level - 1) * 0.6); }
 
   function buildGrid() {
     grid = MAP.map(r => r.split(""));
@@ -512,7 +512,7 @@
   }
 
   function newGame() {
-    score = 0; lives = 3; level = 1; take = 1;
+    score = 0; lives = 5; level = 1; take = 1; nextLife = 4000;
     buildGrid(); resetPositions(); toReady();
   }
 
@@ -552,7 +552,7 @@
       } else return;
     } else if (p.next && opposite(p.next, p.dir)) {
       reverse(p); p.face = p.dir;
-    } else if (p.next && !same(p.next, p.dir) && p.t < 0.35 && !blocked(p.x + p.next.x, p.y + p.next.y)) {
+    } else if (p.next && !same(p.next, p.dir) && p.t < 0.5 && !blocked(p.x + p.next.x, p.y + p.next.y)) {
       // tolerância: virou um pouquinho atrasado, ainda conta a curva
       p.dir = p.next; p.face = p.next; p.t = 0;
     }
@@ -572,12 +572,21 @@
       frightTimer = frightDuration(); chain = 0;
       for (const g of ghosts) if (g.state === "active") { g.frightened = true; reverse(g); }
     }
-    if ((dotsEaten === 70 || dotsEaten === 150) && bonusSpawns < 2 && !bonus) {
-      bonusSpawns++; bonus = { x: START.x, y: START.y, time: 9 };
+    // prêmio aparece a cada 30 fotogramas, num lugar aleatório longe da claquete
+    if (dotsEaten > 0 && dotsEaten % 30 === 0 && !bonus && (c === "." || c === "o")) {
+      const spots = [];
+      MAP.forEach((row, yy) => row.split("").forEach((ch, xx) => {
+        if ((ch === "." || ch === "o" || ch === "P") && Math.abs(xx - x) + Math.abs(yy - y) >= 5) spots.push({ x: xx, y: yy });
+      }));
+      if (spots.length) { bonusSpawns++; bonus = { ...spots[Math.floor(Math.random() * spots.length)], time: 12 }; }
     }
-    if (bonus && x === bonus.x && y === bonus.y && bonus.time < 8.7) {
+    if (bonus && x === bonus.x && y === bonus.y) {
       const pts = Math.min(5000, 300 * level);
       score += pts; addPopup(x, y, String(pts), C.marquee); sfx.bonus(); bonus = null;
+    }
+    if (score >= nextLife) {
+      nextLife += 5000; lives++;
+      addPopup(x, y, "+1 vida", "#7ee08a"); sfx.bonus();
     }
     if (dotsLeft <= 0) { state = "clear"; stateTimer = 2.4; sfx.clear(); showFlash("Cena aprovada!", "Corta e imprime"); }
     updateHud();
@@ -776,18 +785,18 @@
     elScore.textContent = score;
     elBest.textContent = Math.max(best, score);
     elScene.textContent = `${level} / ${take}`;
-    const want = Math.max(0, lives - (state === "play" || state === "ready" ? 1 : 0));
-    if (elLives.childElementCount !== want) {
-      elLives.innerHTML = "";
-      for (let i = 0; i < want; i++) {
-        const c = document.createElement("canvas");
-        c.width = 40; c.height = 40;
-        const x = c.getContext("2d");
-        x.scale(2, 2);
-        drawClapper(x, 10, 11, 18, D.right, 0.25);
-        elLives.appendChild(c);
-      }
+    const want = Math.max(0, lives);
+    if (!elLives.firstChild) {
+      const c = document.createElement("canvas");
+      c.width = 40; c.height = 40;
+      const x = c.getContext("2d");
+      x.scale(2, 2);
+      drawClapper(x, 10, 11, 18, D.right, 0.25);
+      const t = document.createElement("span");
+      t.className = "v"; t.id = "livesN";
+      elLives.append(c, t);
     }
+    document.getElementById("livesN").textContent = "× " + want;
   }
 
   // ---------- Desenho ----------
@@ -795,7 +804,7 @@
     const availW = wrap.clientWidth;
     const coarse = matchMedia("(pointer: coarse)").matches;
     // o labirinto inteiro sempre cabe na tela, sem nada se mexer
-    const availH = Math.max(300, window.innerHeight - (coarse ? 148 : 240));
+    const availH = Math.max(300, window.innerHeight - (coarse ? 126 : 240));
     viewCols = COLS; viewRows = ROWS;
     tile = Math.max(10, Math.floor(Math.min(availW / COLS, availH / ROWS, 32) * 2) / 2);
     dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -1260,10 +1269,10 @@
   function joyMove(e) {
     const r = joy.getBoundingClientRect();
     let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-    const max = r.width / 2 - 14, len = Math.hypot(dx, dy);
+    const max = r.width / 2 - 10, len = Math.hypot(dx, dy);
     if (len > max) { dx = dx / len * max; dy = dy / len * max; }
     knob.style.transform = `translate(${dx}px, ${dy}px)`;
-    if (len > 5) {
+    if (len > 4) {
       const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up");
       if (d !== joyDir) { joyDir = d; steer(d); }
     }

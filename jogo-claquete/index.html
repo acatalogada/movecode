@@ -687,7 +687,12 @@
       return;
     }
     if (g.state === "entering") {
-      if (g.y >= HOUSE_Y) { g.state = "leaving"; g.frightened = false; g.dir = D.up; }
+      if (g.y >= HOUSE_Y) {
+        // descansa no camarim até o café acabar, e mais 2 segundos
+        g.state = "house"; g.frightened = false; g.moving = false; g.t = 0; g.dir = D.up;
+        g.release = lifeClock + Math.max(frightTimer, 0) + 2;
+        g.moving = false;
+      }
       return;
     }
     if (g.state === "eaten" && g.x === DOOR_OUT.x && g.y === DOOR_OUT.y) {

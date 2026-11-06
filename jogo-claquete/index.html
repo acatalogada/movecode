@@ -477,7 +477,7 @@
   let player, ghosts, frightTimer = 0, chain = 0, freeze = 0;
   let modeIdx = 0, modeTimer = 0, popups = [], bonus = null, bonusSpawns = 0;
   let lifeClock = 0, now = 0;
-  const SCHEDULE = [7, 20, 7, 20, 5, Infinity]; // dispersão, perseguição...
+  const SCHEDULE = [10, 12, 10, 15, 7, Infinity]; // dispersão, perseguição...
 
   const GHOST_DEFS = [
     { name: "Despertador", color: "#e5484d" },
@@ -488,16 +488,18 @@
 
   function speeds() {
     const k = 1 + Math.min(level - 1, 6) * 0.03;
+    // relógios começam lentos e aceleram um pouco a cada cena
+    const g = Math.min(3.0 + (level - 1) * 0.25, 4.4);
     return {
       player: 5.0 * k,
-      ghost: 3.6 * k,
+      ghost: g,
       fright: 2.2,
       tunnel: 2.5,
       eyes: 11,
       house: 2.5,
     };
   }
-  function frightDuration() { return Math.max(4, 9.5 - (level - 1) * 0.6); }
+  function frightDuration() { return Math.max(4, 11 - (level - 1) * 1.2); }
 
   function buildGrid() {
     grid = MAP.map(r => r.split(""));
@@ -518,7 +520,7 @@
 
   function resetPositions() {
     player = { x: START.x, y: START.y, dir: D.left, face: D.left, hflip: true, t: 0, moving: false, next: null };
-    const release = [0, 1.2, 4, 7.5].map(v => v / (1 + (level - 1) * 0.3));
+    const release = [0, 4, 9, 14].map(v => v / (1 + (level - 1) * 0.4));
     ghosts = GHOST_DEFS.map((d, i) => {
       const corner = [{ x: COLS - 2, y: -2 }, { x: 1, y: -2 }, { x: COLS - 1, y: ROWS + 1 }, { x: 0, y: ROWS + 1 }][i];
       const g = { ...d, corner, i, t: 0, frightened: false, moving: false, release: release[i] };
@@ -699,7 +701,7 @@
       const gp = pos(g);
       let dx = Math.abs(gp.x - pp.x); if (dx > COLS / 2) dx = COLS - dx;
       const dy = Math.abs(gp.y - pp.y);
-      if (dx < 0.6 && dy < 0.6) {
+      if (dx < 0.5 && dy < 0.5) {
         if (g.frightened) {
           g.frightened = false; g.state = "eaten";
           const pts = 200 * Math.pow(2, chain++);

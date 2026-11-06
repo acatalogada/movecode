@@ -7,35 +7,33 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Limelight&family=Courier+Prime:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap">
 <style>
-  /* Layout: cinema de desenho animado — paredes de bala, palco roxo, letreiro dourado */
+  /* Layout: fliperama de cinema — placar enxuto no topo, labirinto solto na tela, joystick embaixo */
   :root {
-    --bg: #1c2038;          /* sala de cinema */
-    --board: #12162b;       /* chão do labirinto */
-    --panel: #262b4a;
-    --wall: #4a5d9c;        /* paredes azul-poltrona */
-    --wall-shade: #2c3768;
-    --marquee: #f0c75e;     /* letreiro */
-    --chalk: #f6f1e7;
-    --muted: #a6acc9;
-    --red: #e5484d;
-    --font-display: "Limelight", "Didot", Georgia, serif;
-    --font-script: "Courier Prime", "Courier New", Courier, monospace;
+    --bg: #16132b;          /* sala escura */
+    --board: #0d0b1e;       /* chão do labirinto */
+    --panel: #221d3f;       /* cartões e botões */
+    --line: rgba(255, 244, 224, 0.14);
+    --gold: #ffc94a;        /* moedas e destaques */
+    --cream: #fff4e0;       /* texto */
+    --muted: #9d97c2;
+    --font-display: "Fredoka", "Nunito", "Trebuchet MS", system-ui, sans-serif;
+    --font-body: "Nunito", "Trebuchet MS", system-ui, sans-serif;
     color-scheme: dark;
   }
   html, body { height: 100%; }
   body {
     background: var(--bg);
-    color: var(--chalk);
-    font-family: var(--font-script);
+    color: var(--cream);
+    font-family: var(--font-body);
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior: none;
   }
   .stage {
     max-width: 600px;
     margin: 0 auto;
-    padding-block: 14px 20px;
+    padding-block: 12px 20px;
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
     display: flex;
@@ -43,69 +41,69 @@
     align-items: center;
     gap: 10px;
   }
-  header { text-align: center; display: grid; gap: 2px; }
+  header { text-align: center; }
   h1 {
     font-family: var(--font-display);
-    font-weight: 400;
-    font-size: clamp(30px, 8vw, 46px);
+    font-weight: 700;
+    font-size: clamp(28px, 7vw, 40px);
     line-height: 1;
     margin: 0;
-    color: var(--marquee);
-    letter-spacing: 0.02em;
-    text-shadow: 0 0 18px rgba(242, 193, 78, 0.35);
+    color: var(--cream);
+    letter-spacing: 0.01em;
     text-wrap: balance;
   }
-  .slug {
-    margin: 0;
-    font-size: 12px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
+  h1 span { color: var(--gold); }
+
+  /* placar */
   .hud {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    border: 2px solid var(--chalk);
-    border-radius: 4px;
-    background: var(--panel);
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
   }
-  .hud > div {
-    padding: 6px 8px;
-    display: grid;
-    gap: 1px;
-    min-width: 0;
-  }
-  .hud > div + div { border-left: 1px solid rgba(243, 237, 226, 0.35); }
-  .hud .k {
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  .hud .v {
-    font-size: 17px;
+  .score { display: grid; line-height: 1; min-width: 0; }
+  .score b {
+    font-family: var(--font-display);
     font-weight: 700;
+    font-size: 26px;
     font-variant-numeric: tabular-nums;
+    color: var(--cream);
+  }
+  .score small {
+    margin-top: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+  .pill {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--gold);
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
-  #lives { display: flex; gap: 4px; align-items: center; height: 22px; }
-  #lives canvas { width: 20px; height: 20px; }
-  .board-wrap {
-    position: relative;
-    width: 100%;
+  #lives {
+    justify-self: end;
     display: flex;
-    justify-content: center;
+    gap: 6px;
+    align-items: center;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 17px;
   }
-  canvas#board {
-    display: block;
-    border-radius: 6px;
-    box-shadow: 0 0 0 2px rgba(240, 199, 94, 0.6), 0 16px 40px rgba(0, 0, 0, 0.45);
-    touch-action: none;
-    max-width: 100%;
-  }
+  #lives canvas { width: 22px; height: 22px; }
+
+  .board-wrap { position: relative; width: 100%; display: flex; justify-content: center; }
+  canvas#board { display: block; touch-action: none; max-width: 100%; }
+
+  /* sobreposições */
   #overlay {
     position: absolute;
     inset: 0;
@@ -114,124 +112,90 @@
     justify-content: center;
     pointer-events: none;
   }
+  .card, .flash {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+    text-align: center;
+    max-width: min(86%, 330px);
+  }
   .card {
     pointer-events: auto;
-    background: rgba(28, 32, 56, 0.95);
-    border: 2px solid var(--marquee);
-    border-radius: 6px;
-    padding: 18px 20px;
-    max-width: min(86%, 340px);
-    text-align: center;
+    padding: 22px 26px;
     display: grid;
-    gap: 10px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    gap: 14px;
   }
   .card h2 {
     margin: 0;
     font-family: var(--font-display);
-    font-weight: 400;
-    color: var(--marquee);
+    font-weight: 700;
+    color: var(--cream);
     font-size: 30px;
     line-height: 1.05;
     text-wrap: balance;
   }
-  .card p { margin: 0; font-size: 14px; line-height: 1.45; }
-  .card .small { font-size: 12px; color: var(--muted); }
+  .card h2 span { color: var(--gold); }
+  .card p { margin: 0; font-size: 15px; line-height: 1.45; }
+  .card .small { font-size: 13px; color: var(--muted); }
   .flash {
+    padding: 14px 26px 13px;
     font-family: var(--font-display);
-    color: var(--marquee);
-    font-size: clamp(24px, 7vw, 36px);
-    text-align: center;
+    font-weight: 700;
+    font-size: clamp(24px, 7vw, 32px);
     line-height: 1.1;
-    background: #12162b;
-    border: 2px solid var(--marquee);
-    border-radius: 10px;
-    padding: 14px 24px 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-    max-width: 86%;
-    animation: pop 0.35s ease-out;
+    color: var(--cream);
+    animation: pop 0.3s ease-out;
   }
   .flash small {
     display: block;
-    margin-top: 6px;
-    font-family: var(--font-script);
-    font-weight: 700;
+    margin-top: 5px;
+    font-family: var(--font-body);
+    font-weight: 800;
     font-size: 14px;
-    letter-spacing: 0.08em;
-    color: var(--chalk);
+    color: var(--gold);
   }
-  @keyframes pop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .flash { animation: none; } }
-  button {
-    font: inherit;
-    cursor: pointer;
-  }
+
+  button { font: inherit; cursor: pointer; }
   .btn {
     justify-self: center;
-    background: var(--marquee);
-    color: #1a1406;
+    background: var(--gold);
+    color: #2a1d00;
     border: 0;
-    border-radius: 4px;
-    padding: 10px 26px;
+    border-radius: 999px;
+    padding: 11px 34px;
     font-family: var(--font-display);
+    font-weight: 700;
     font-size: 22px;
-    letter-spacing: 0.04em;
+    box-shadow: 0 4px 0 #c8962a;
   }
-  .btn:hover { filter: brightness(1.08); }
-  button:focus-visible { outline: 3px solid var(--chalk); outline-offset: 2px; }
+  .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #c8962a; }
+  button:focus-visible, .ghost-btn:focus-visible { outline: 3px solid var(--cream); outline-offset: 2px; }
+
+  /* rodapé */
   .controls {
     width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
+    display: grid;
+    gap: 10px;
+    justify-items: center;
+    text-align: center;
   }
+  .buttons { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
   .ghost-btn {
-    background: transparent;
-    color: var(--chalk);
-    border: 1px solid rgba(243, 237, 226, 0.4);
-    border-radius: 4px;
-    padding: 6px 12px;
+    background: var(--panel);
+    color: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 7px 14px;
     font-size: 13px;
+    font-weight: 700;
   }
   .help { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
-  .joy {
-    display: none;
-    position: relative;
-    width: 56px;
-    height: 56px;
-    pointer-events: none;
-    border-radius: 50%;
-    background: radial-gradient(circle at 50% 40%, #343a63 0%, var(--panel) 75%);
-    border: 2px solid rgba(240, 199, 94, 0.7);
-    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.35);
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-    flex: none;
-  }
-  .joy::before {
-    content: "";
-    position: absolute;
-    inset: 22%;
-    border-radius: 50%;
-    border: 1px dashed rgba(243, 237, 226, 0.18);
-  }
-  .knob {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 24px;
-    height: 24px;
-    margin: -12px 0 0 -12px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #ffe08a, var(--marquee) 55%, #b98a22);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);
-    transition: transform 0.12s ease-out;
-    pointer-events: none;
-  }
-  .joy.active .knob { transition: none; }
+  .help a { color: inherit; }
+
+  /* joystick */
   .joyzone {
     display: none;
     width: 100%;
@@ -242,16 +206,36 @@
     user-select: none;
     -webkit-user-select: none;
   }
+  .joy {
+    display: none;
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    pointer-events: none;
+    flex: none;
+  }
+  .knob {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 24px;
+    height: 24px;
+    margin: -12px 0 0 -12px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+    transition: transform 0.12s ease-out;
+  }
+  .joy.active .knob { transition: none; }
   @media (pointer: coarse) {
     .joyzone { display: flex; }
     .joy { display: block; }
-    .stage { padding-block: 4px 16px; gap: 6px; }
+    .stage { padding-block: 6px 16px; gap: 6px; }
     header { display: none; }
-    .hud > div { padding: 3px 7px; }
-    .hud .k { font-size: 9px; }
-    .hud .v { font-size: 14px; }
-    #lives { height: 18px; }
-    #lives canvas { width: 16px; height: 16px; }
+    .help .desk { display: none; }
   }
 </style>
 </head>
@@ -259,15 +243,13 @@
 
 <main class="stage">
   <header>
-    <h1>Claquete em Fuga</h1>
-    <p class="slug">INT. Estúdio 4 — Noite</p>
+    <h1>Claquete <span>em Fuga</span></h1>
   </header>
 
   <div class="hud" aria-live="polite">
-    <div><span class="k">Pontos</span><span class="v" id="score">0</span></div>
-    <div><span class="k">Recorde</span><span class="v" id="best">0</span></div>
-    <div><span class="k">Cena/Take</span><span class="v" id="scene">1 / 1</span></div>
-    <div><span class="k">Vidas</span><span id="lives"></span></div>
+    <div class="score"><b id="score">0</b><small>Recorde <span id="best">0</span></small></div>
+    <div class="pill" id="scene">Cena 1</div>
+    <div id="lives" aria-label="Vidas"></div>
   </div>
 
   <div class="board-wrap" id="wrap">
@@ -280,15 +262,15 @@
   </div>
 
   <div class="controls">
-    <p class="help">Setas ou WASD para mover · Espaço pausa<br>No celular: encoste o dedo na área do joystick e deslize de leve<br>
-    Foto: Alan Santos / PR, Agência Brasil, licença <a href="https://creativecommons.org/licenses/by/3.0/br/" style="color:inherit">CC BY 3.0 BR</a> (recortada)</p>
-    <div style="display:flex; gap:8px; flex-wrap:wrap">
+    <div class="buttons">
+      <button class="ghost-btn" id="pauseBtn">Pausar</button>
+      <button class="ghost-btn" id="muteBtn">Som: ligado</button>
       <button class="ghost-btn" id="layoutBtn">Labirinto: quadrado</button>
       <label class="ghost-btn" for="faceInput" style="cursor:pointer">Trocar foto</label>
       <input type="file" id="faceInput" accept="image/*" hidden>
-      <button class="ghost-btn" id="pauseBtn">Pausar</button>
-      <button class="ghost-btn" id="muteBtn">Som: ligado</button>
     </div>
+    <p class="help"><span class="desk">Setas ou WASD para mover · Espaço pausa<br></span>
+    Foto: Alan Santos / PR, Agência Brasil, licença <a href="https://creativecommons.org/licenses/by/3.0/br/">CC BY 3.0 BR</a> (recortada)</p>
   </div>
 </main>
 
@@ -484,11 +466,11 @@
 
   const css = getComputedStyle(document.documentElement);
   const C = {
-    bg: css.getPropertyValue("--bg").trim() || "#0f0d14",
+    bg: css.getPropertyValue("--bg").trim() || "#16132b",
     wall: css.getPropertyValue("--wall").trim() || "#ff5c8a",
     wallShade: css.getPropertyValue("--wall-shade").trim() || "#b62f62",
-    board: css.getPropertyValue("--board").trim() || "#170e45",
-    marquee: css.getPropertyValue("--marquee").trim() || "#f2c14e",
+    board: css.getPropertyValue("--board").trim() || "#0d0b1e",
+    marquee: css.getPropertyValue("--gold").trim() || "#ffc94a",
     chalk: css.getPropertyValue("--chalk").trim() || "#f3ede2",
   };
 
@@ -659,10 +641,10 @@
 
   // cada cena traz um elenco novo de perseguidores e outra cor de cenário
   const SCENES = [
-    { kind: "clock", name: "Despertadores", wall: "#4a5d9c", shade: "#2c3768", colors: ["#e5484d", "#b98cf5", "#3fc1b0"] },
-    { kind: "camera", name: "Câmeras", wall: "#3f8a7a", shade: "#245548", colors: ["#f08c3a", "#6cb6ff", "#e86fb0"] },
-    { kind: "reel", name: "Rolos de filme", wall: "#8a4f86", shade: "#552f53", colors: ["#f2c14e", "#4fd1c5", "#ff7a6b"] },
-    { kind: "mega", name: "Megafones", wall: "#9c7a3f", shade: "#5f4824", colors: ["#e5484d", "#7c8cff", "#5fd18a"] },
+    { kind: "clock", name: "Despertadores", wall: "#5868cf", shade: "#323d85", colors: ["#e5484d", "#b98cf5", "#3fc1b0"] },
+    { kind: "camera", name: "Câmeras", wall: "#2fa184", shade: "#1b6150", colors: ["#f08c3a", "#6cb6ff", "#e86fb0"] },
+    { kind: "reel", name: "Rolos de filme", wall: "#9a5cc2", shade: "#5c3679", colors: ["#f2c14e", "#4fd1c5", "#ff7a6b"] },
+    { kind: "mega", name: "Megafones", wall: "#de8f3c", shade: "#8c5821", colors: ["#e5484d", "#7c8cff", "#5fd18a"] },
   ];
   const scene = () => SCENES[(level - 1) % SCENES.length];
 
@@ -923,7 +905,7 @@
   function titleScreen() {
     overlay.innerHTML = `
       <div class="card">
-        <h2>Claquete em Fuga</h2>
+        <h2>Claquete <span>em Fuga</span></h2>
         <button class="btn" id="startBtn">Ação!</button>
       </div>`;
     document.getElementById("startBtn").addEventListener("click", start);
@@ -948,7 +930,7 @@
   function updateHud() {
     elScore.textContent = score;
     elBest.textContent = Math.max(best, score);
-    elScene.textContent = `${level} / ${take}`;
+    elScene.textContent = take > 1 ? `Cena ${level} · Take ${take}` : `Cena ${level}`;
     const want = Math.max(0, lives);
     if (!elLives.firstChild) {
       const c = document.createElement("canvas");
@@ -957,10 +939,10 @@
       x.scale(2, 2);
       drawClapper(x, 10, 10, 18, false, 0, 0.25);
       const t = document.createElement("span");
-      t.className = "v"; t.id = "livesN";
+      t.id = "livesN";
       elLives.append(c, t);
     }
-    document.getElementById("livesN").textContent = "× " + want;
+    document.getElementById("livesN").textContent = "×" + want;
   }
 
   // ---------- Desenho ----------
@@ -984,7 +966,11 @@
     mazeCanvas.width = W * dpr; mazeCanvas.height = H * dpr;
     const m = mazeCanvas.getContext("2d");
     m.scale(dpr, dpr);
-    m.fillStyle = C.board; m.fillRect(0, 0, W, H);
+    // fora do labirinto fica a cor da página; a parede de fora é só uma faixa fina
+    const edge = tile * 0.4;
+    m.fillStyle = C.bg; m.fillRect(0, 0, W, H);
+    m.fillStyle = C.board;
+    roundRect(m, edge, edge, W - edge * 2, H - edge * 2, tile * 0.5); m.fill();
     const isWall = (x, y) => {
       if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return true;
       return MAP[y][x] === "#";
@@ -996,13 +982,19 @@
       // emendas sobrepostas meio pixel para não aparecerem riscos entre blocos
       const x0 = x * tile + (l ? -0.5 : ins), x1 = (x + 1) * tile - (r ? -0.5 : ins);
       const y0 = y * tile + (u ? -0.5 : ins) + off, y1 = (y + 1) * tile - (d ? -0.5 : ins) + off;
-      const tl = !u && !l ? R : 0, tr = !u && !r ? R : 0, br = !d && !r ? R : 0, bl = !d && !l ? R : 0;
+      let X0 = x0, X1 = x1, Y0 = y0, Y1 = y1;
+      if (x === 0) X0 = Math.max(X0, edge); if (x === COLS - 1) X1 = Math.min(X1, W - edge);
+      if (y === 0) Y0 = Math.max(Y0, edge + off); if (y === ROWS - 1) Y1 = Math.min(Y1, H - edge + off);
+      const cornerTL = x === 0 && y === 0, cornerTR = x === COLS - 1 && y === 0;
+      const cornerBR = x === COLS - 1 && y === ROWS - 1, cornerBL = x === 0 && y === ROWS - 1;
+      const tl = (!u && !l) || cornerTL ? R : 0, tr = (!u && !r) || cornerTR ? R : 0;
+      const br = (!d && !r) || cornerBR ? R : 0, bl = (!d && !l) || cornerBL ? R : 0;
       m.beginPath();
-      m.moveTo(x0 + tl, y0);
-      m.lineTo(x1 - tr, y0); if (tr) m.arcTo(x1, y0, x1, y0 + tr, tr);
-      m.lineTo(x1, y1 - br); if (br) m.arcTo(x1, y1, x1 - br, y1, br);
-      m.lineTo(x0 + bl, y1); if (bl) m.arcTo(x0, y1, x0, y1 - bl, bl);
-      m.lineTo(x0, y0 + tl); if (tl) m.arcTo(x0, y0, x0 + tl, y0, tl);
+      m.moveTo(X0 + tl, Y0);
+      m.lineTo(X1 - tr, Y0); if (tr) m.arcTo(X1, Y0, X1, Y0 + tr, tr);
+      m.lineTo(X1, Y1 - br); if (br) m.arcTo(X1, Y1, X1 - br, Y1, br);
+      m.lineTo(X0 + bl, Y1); if (bl) m.arcTo(X0, Y1, X0, Y1 - bl, bl);
+      m.lineTo(X0, Y0 + tl); if (tl) m.arcTo(X0, Y0, X0 + tl, Y0, tl);
       m.closePath(); m.fill();
     };
     const sc = scene();
@@ -1017,7 +1009,7 @@
         if (!(isWall(x + dx, y) && isWall(x, y + dy) && !isWall(x + dx, y + dy))) continue;
         const cx = dx > 0 ? (x + 1) * tile : x * tile, cy = dy > 0 ? (y + 1) * tile : y * tile;
         const sx = cx - (dx > 0 ? ins : 0), sy = cy - (dy > 0 ? ins : 0);
-        m.fillStyle = C.board; m.fillRect(sx, sy, ins, ins);
+        m.fillStyle = C.board; m.fillRect(sx, sy, ins, ins + (dy > 0 ? tile * 0.12 : 0));
         // filete arredondado
         m.fillStyle = sc.wall;
         m.beginPath();
@@ -1045,7 +1037,7 @@
     roundRect(m, dx - tile * 0.1, dy + tile * 0.38, tile * 1.2, tile * 0.24, tile * 0.12); m.fill();
     // placa do camarim
     m.fillStyle = "#fff";
-    m.font = `700 ${Math.max(7, tile * 0.36)}px "Courier Prime", monospace`;
+    m.font = `600 ${Math.max(7, tile * 0.38)}px Fredoka, Nunito, sans-serif`;
     m.textAlign = "center"; m.textBaseline = "middle";
     m.fillText("CAMARIM", (DOOR.x + 0.5) * tile, (HOUSE_Y + 1.5) * tile);
   }
@@ -1438,7 +1430,7 @@
       const cx = (x + 0.5) * tile, cy = (y + 0.5) * tile;
       if (c === ".") {
         // moeda dourada girando devagar
-        const r = tile * 0.17;
+        const r = tile * 0.14;
         const sx = 0.55 + 0.45 * Math.abs(Math.cos(now * 2.2 + (x + y) * 0.6));
         ctx.save(); ctx.translate(cx, cy); ctx.scale(sx, 1);
         ctx.fillStyle = "#b8862a";
@@ -1451,7 +1443,7 @@
         ctx.beginPath(); ctx.ellipse(-r * 0.38, -r * 0.38, r * 0.2, r * 0.12, -0.8, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
       } else if (c === "o") {
-        drawCoffee(ctx, cx, cy, tile * 1.2);
+        drawCoffee(ctx, cx, cy, tile * 1.4);
       }
     }
     if (bonus && (bonus.time > 2 || Math.floor(now * 8) % 2 === 0)) {
@@ -1463,7 +1455,7 @@
       if (!(state === "dying" && stateTimer < 1.2) && state !== "clear") {
         for (const g of ghosts) {
           const p = pos(g);
-          drawEnemy(ctx, g, (p.x + 0.5) * tile, (p.y + 0.5) * tile, tile * (g.face ? 1.25 : 1.15));
+          drawEnemy(ctx, g, (p.x + 0.5) * tile, (p.y + 0.5) * tile, tile * (g.face ? 1.35 : 1.25));
         }
       }
       // claquete
@@ -1471,17 +1463,17 @@
       const cx = (p.x + 0.5) * tile, cy = (p.y + 0.5) * tile;
       if (state === "dying") {
         const k = Math.min(1, (1.6 - stateTimer) / 1.2);
-        drawClapper(ctx, cx, cy, tile * 1.15, player.hflip, 0, k < 0.2 ? 1 - k * 5 : 0, k * Math.PI * 2, Math.max(0.01, 1 - k));
+        drawClapper(ctx, cx, cy, tile * 1.25, player.hflip, 0, k < 0.2 ? 1 - k * 5 : 0, k * Math.PI * 2, Math.max(0.01, 1 - k));
       } else {
         if (player.face.x) player.hflip = player.face.x < 0;
         const open = (state === "play" && player.moving) ? (Math.sin(now * 20) + 1) / 2 : 0.35;
-        drawClapper(ctx, cx, cy, tile * 1.15, player.hflip, player.face.y * 0.4, open);
+        drawClapper(ctx, cx, cy, tile * 1.25, player.hflip, player.face.y * 0.3, open);
       }
     }
 
     // pontuações flutuantes
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.font = `700 ${Math.max(10, tile * 0.55)}px "Courier Prime", monospace`;
+    ctx.font = `700 ${Math.max(10, tile * 0.55)}px Fredoka, Nunito, sans-serif`;
     for (const p of popups) {
       ctx.globalAlpha = Math.min(1, p.t * 2);
       ctx.fillStyle = "#000";

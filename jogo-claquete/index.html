@@ -362,7 +362,7 @@
     { name: "Despertador", color: "#e5484d", corner: { x: COLS - 2, y: -2 } },
     { name: "Cronômetro", color: "#b98cf5", corner: { x: 1, y: -2 } },
     { name: "Ampulheta", color: "#3fc1b0", corner: { x: COLS - 1, y: ROWS + 1 } },
-    { name: "Relógio de ponto", color: "#f08c3a", corner: { x: 0, y: ROWS + 1 } },
+    { name: "Bolsonaro", color: "#f08c3a", face: true, corner: { x: 0, y: ROWS + 1 } },
   ];
 
   function speeds() {
@@ -643,8 +643,8 @@
     overlay.innerHTML = `
       <div class="card">
         <h2>Silêncio no set</h2>
-        <p>Você é a claquete. Recolha todos os fotogramas do estúdio antes que os despertadores alcancem você.</p>
-        <p class="small">Uma xícara de café faz os relógios pararem por alguns segundos. Aproveite para cobrá-los. A pipoca vale bônus.</p>
+        <p>Você é a claquete. Recolha todos os fotogramas do estúdio antes que os despertadores, e o Bolsonaro, alcancem você.</p>
+        <p class="small">Uma xícara de café deixa os perseguidores lentos por alguns segundos. Aproveite para pegá-los. A pipoca vale bônus.</p>
         <button class="btn" id="startBtn">Ação!</button>
       </div>`;
     document.getElementById("startBtn").addEventListener("click", start);
@@ -815,7 +815,92 @@
     c.restore();
   }
 
+  // Caricatura desenhada: o perseguidor político do set
+  function drawFace(c, g, cx, cy, s) {
+    const r = s * 0.36;
+    const flashing = g.frightened && frightTimer < 2 && Math.floor(now * 6) % 2 === 0;
+    const eyesOnly = g.state === "eaten" || g.state === "entering";
+    const ink = "#1b1720";
+    c.save();
+    c.translate(cx, cy);
+    if (g.state === "house") c.translate(0, Math.sin(now * 5 + g.i) * s * 0.08);
+    if (g.state === "active" && !g.frightened) c.rotate(Math.sin(now * 7) * 0.06);
+    if (!eyesOnly) {
+      // terno + faixa presidencial
+      c.save();
+      c.beginPath(); c.ellipse(0, r * 1.08, r * 0.98, r * 0.42, 0, Math.PI, 0); c.closePath();
+      c.fillStyle = g.frightened ? "#26306f" : "#2a2f3a"; c.fill();
+      if (!g.frightened) {
+        c.clip();
+        c.lineWidth = r * 0.22;
+        c.strokeStyle = "#1f9d55";
+        c.beginPath(); c.moveTo(-r, r * 0.62); c.lineTo(r, r * 1.2); c.stroke();
+        c.lineWidth = r * 0.09; c.strokeStyle = "#f5d020";
+        c.beginPath(); c.moveTo(-r, r * 0.62); c.lineTo(r, r * 1.2); c.stroke();
+      }
+      c.restore();
+      const skin = g.frightened ? (flashing ? "#f3ede2" : "#3b4cc0") : "#e8b38e";
+      // orelhas
+      c.fillStyle = skin;
+      for (const sx of [-1, 1]) {
+        c.beginPath(); c.ellipse(sx * r * 0.78, r * 0.02, r * 0.14, r * 0.22, 0, 0, Math.PI * 2); c.fill();
+      }
+      // cabeça
+      c.beginPath(); c.ellipse(0, 0, r * 0.76, r * 0.92, 0, 0, Math.PI * 2); c.fill();
+      // cabelo grisalho repartido de lado
+      c.fillStyle = g.frightened ? (flashing ? "#e5484d" : "#26306f") : "#6b6866";
+      c.beginPath();
+      c.moveTo(-r * 0.8, -r * 0.12);
+      c.quadraticCurveTo(-r * 0.88, -r * 1.02, -r * 0.1, -r * 1.02);
+      c.quadraticCurveTo(r * 0.78, -r * 1.04, r * 0.82, -r * 0.22);
+      c.quadraticCurveTo(r * 0.62, -r * 0.7, -r * 0.08, -r * 0.62);
+      c.quadraticCurveTo(-r * 0.55, -r * 0.58, -r * 0.8, -r * 0.12);
+      c.fill();
+      if (!g.frightened) {
+        c.strokeStyle = "#b9b4ad"; c.lineWidth = Math.max(0.6, s * 0.02);
+        c.beginPath(); c.moveTo(-r * 0.38, -r * 0.98); c.quadraticCurveTo(-r * 0.3, -r * 0.8, -r * 0.2, -r * 0.62); c.stroke();
+      }
+    }
+    const ex = r * 0.3, ey = -r * 0.16;
+    if (g.frightened && !eyesOnly) {
+      c.fillStyle = flashing ? "#e5484d" : "#c9d2ff";
+      c.beginPath(); c.arc(-ex, ey, r * 0.09, 0, Math.PI * 2); c.arc(ex, ey, r * 0.09, 0, Math.PI * 2); c.fill();
+      c.strokeStyle = c.fillStyle; c.lineWidth = Math.max(0.8, s * 0.035);
+      c.beginPath();
+      for (let k = 0; k <= 4; k++) {
+        const x = -r * 0.34 + k * r * 0.17, y = r * 0.45 + (k % 2 ? -r * 0.07 : r * 0.04);
+        k ? c.lineTo(x, y) : c.moveTo(x, y);
+      }
+      c.stroke();
+    } else {
+      if (!eyesOnly) {
+        // sobrancelhas grossas e franzidas
+        c.strokeStyle = "#3d3a38"; c.lineWidth = Math.max(1, r * 0.13); c.lineCap = "round";
+        c.beginPath();
+        c.moveTo(-r * 0.5, -r * 0.42); c.lineTo(-r * 0.14, -r * 0.33);
+        c.moveTo(r * 0.5, -r * 0.42); c.lineTo(r * 0.14, -r * 0.33);
+        c.stroke();
+      }
+      c.fillStyle = "#fff"; c.strokeStyle = ink; c.lineWidth = Math.max(0.6, s * 0.025);
+      for (const sx of [-1, 1]) { c.beginPath(); c.arc(sx * ex, ey, r * 0.16, 0, Math.PI * 2); c.fill(); c.stroke(); }
+      c.fillStyle = eyesOnly ? "#2d6cdf" : ink;
+      const d = g.dir || D.left;
+      for (const sx of [-1, 1]) {
+        c.beginPath(); c.arc(sx * ex + d.x * r * 0.06, ey + d.y * r * 0.06, r * 0.08, 0, Math.PI * 2); c.fill();
+      }
+      if (!eyesOnly) {
+        // nariz e boca
+        c.strokeStyle = "#a8735a"; c.lineWidth = Math.max(0.8, s * 0.03);
+        c.beginPath(); c.moveTo(0, -r * 0.05); c.lineTo(-r * 0.06, r * 0.18); c.lineTo(r * 0.04, r * 0.2); c.stroke();
+        c.strokeStyle = "#7a3b32"; c.lineWidth = Math.max(1, s * 0.04);
+        c.beginPath(); c.moveTo(-r * 0.26, r * 0.48); c.quadraticCurveTo(0, r * 0.36, r * 0.26, r * 0.48); c.stroke();
+      }
+    }
+    c.restore();
+  }
+
   function drawClock(c, g, cx, cy, s) {
+    if (g.face) return drawFace(c, g, cx, cy, s);
     const r = s * 0.34;
     const flashing = g.frightened && frightTimer < 2 && Math.floor(now * 6) % 2 === 0;
     c.save();

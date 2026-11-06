@@ -368,12 +368,12 @@
   function speeds() {
     const k = 1 + Math.min(level - 1, 6) * 0.05;
     return {
-      player: 7.4 * k,
-      ghost: 6.8 * k,
-      fright: 4.2,
-      tunnel: 3.8,
-      eyes: 15,
-      house: 3.5,
+      player: 5.0 * k,
+      ghost: 4.5 * k,
+      fright: 2.8,
+      tunnel: 2.5,
+      eyes: 11,
+      house: 2.5,
     };
   }
   function frightDuration() { return Math.max(2, 7.5 - (level - 1) * 0.8); }
@@ -449,6 +449,9 @@
       } else return;
     } else if (p.next && opposite(p.next, p.dir)) {
       reverse(p); p.face = p.dir;
+    } else if (p.next && !same(p.next, p.dir) && p.t < 0.35 && !blocked(p.x + p.next.x, p.y + p.next.y)) {
+      // tolerância: virou um pouquinho atrasado, ainda conta a curva
+      p.dir = p.next; p.face = p.next; p.t = 0;
     }
     advance(p, sp, dt, e => {
       eatAt(e.x, e.y);

@@ -9,13 +9,16 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Limelight&family=Courier+Prime:wght@400;700&display=swap">
 <style>
-  /* Layout: um set de filmagem à noite — letreiro de cinema no topo, o labirinto como palco, HUD em formato de claquete */
+  /* Layout: cinema de desenho animado — paredes de bala, palco roxo, letreiro dourado */
   :root {
-    --bg: #0f0d14;          /* estúdio escuro */
-    --wall: #1c1824;        /* rotunda */
-    --marquee: #f2c14e;     /* lâmpada de letreiro */
-    --chalk: #f3ede2;       /* giz da claquete */
-    --muted: #8f879e;
+    --bg: #2a1a6b;          /* sala roxa */
+    --board: #170e45;       /* chão do labirinto */
+    --panel: #36238a;
+    --wall: #ff5c8a;        /* paredes cor de bala */
+    --wall-shade: #b62f62;
+    --marquee: #ffd23f;     /* letreiro */
+    --chalk: #fff7ec;
+    --muted: #c4b5ff;
     --red: #e5484d;
     --font-display: "Limelight", "Didot", Georgia, serif;
     --font-script: "Courier Prime", "Courier New", Courier, monospace;
@@ -65,7 +68,7 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
     border: 2px solid var(--chalk);
     border-radius: 4px;
-    background: #17141e;
+    background: var(--panel);
   }
   .hud > div {
     padding: 6px 8px;
@@ -99,7 +102,7 @@
   canvas#board {
     display: block;
     border-radius: 6px;
-    box-shadow: 0 0 0 1px rgba(242, 193, 78, 0.25), 0 20px 50px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 0 3px var(--marquee), 0 16px 40px rgba(0, 0, 0, 0.45);
     touch-action: none;
     max-width: 100%;
   }
@@ -113,7 +116,7 @@
   }
   .card {
     pointer-events: auto;
-    background: rgba(15, 13, 20, 0.92);
+    background: rgba(42, 26, 107, 0.95);
     border: 2px solid var(--marquee);
     border-radius: 6px;
     padding: 18px 20px;
@@ -189,9 +192,9 @@
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    background: radial-gradient(circle at 50% 50%, #241f2e 0%, #17141e 70%);
-    border: 2px solid rgba(242, 193, 78, 0.45);
-    box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.6);
+    background: radial-gradient(circle at 50% 40%, #4a33a8 0%, var(--panel) 75%);
+    border: 3px solid var(--marquee);
+    box-shadow: 0 4px 0 var(--wall-shade), inset 0 0 10px rgba(0, 0, 0, 0.35);
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
@@ -349,7 +352,9 @@
   const css = getComputedStyle(document.documentElement);
   const C = {
     bg: css.getPropertyValue("--bg").trim() || "#0f0d14",
-    wall: css.getPropertyValue("--wall").trim() || "#1c1824",
+    wall: css.getPropertyValue("--wall").trim() || "#ff5c8a",
+    wallShade: css.getPropertyValue("--wall-shade").trim() || "#b62f62",
+    board: css.getPropertyValue("--board").trim() || "#170e45",
     marquee: css.getPropertyValue("--marquee").trim() || "#f2c14e",
     chalk: css.getPropertyValue("--chalk").trim() || "#f3ede2",
   };
@@ -498,7 +503,7 @@
   }
 
   function resetPositions() {
-    player = { x: START.x, y: START.y, dir: D.left, face: D.left, t: 0, moving: false, next: null };
+    player = { x: START.x, y: START.y, dir: D.left, face: D.left, hflip: true, t: 0, moving: false, next: null };
     const release = [0, 1.2, 4, 7.5].map(v => v / (1 + (level - 1) * 0.3));
     ghosts = GHOST_DEFS.map((d, i) => {
       const corner = [{ x: COLS - 2, y: -2 }, { x: 1, y: -2 }, { x: COLS - 1, y: ROWS + 1 }, { x: 0, y: ROWS + 1 }][i];
@@ -796,7 +801,7 @@
       c.width = 40; c.height = 40;
       const x = c.getContext("2d");
       x.scale(2, 2);
-      drawClapper(x, 10, 11, 18, D.right, 0.25);
+      drawClapper(x, 10, 10, 18, false, 0, 0.25);
       const t = document.createElement("span");
       t.className = "v"; t.id = "livesN";
       elLives.append(c, t);
@@ -825,47 +830,66 @@
     mazeCanvas.width = W * dpr; mazeCanvas.height = H * dpr;
     const m = mazeCanvas.getContext("2d");
     m.scale(dpr, dpr);
-    m.fillStyle = C.bg; m.fillRect(0, 0, W, H);
+    m.fillStyle = C.board; m.fillRect(0, 0, W, H);
     const isWall = (x, y) => {
       if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return true;
       return MAP[y][x] === "#";
     };
-    // blocos
+    // paredes arredondadas e emendadas, como balas de goma
+    const ins = tile * 0.17, R = tile * 0.3;
+    const shape = (x, y, off) => {
+      const u = isWall(x, y - 1), d = isWall(x, y + 1), l = isWall(x - 1, y), r = isWall(x + 1, y);
+      const x0 = x * tile + (l ? 0 : ins), x1 = (x + 1) * tile - (r ? 0 : ins);
+      const y0 = y * tile + (u ? 0 : ins) + off, y1 = (y + 1) * tile - (d ? 0 : ins) + off;
+      const tl = !u && !l ? R : 0, tr = !u && !r ? R : 0, br = !d && !r ? R : 0, bl = !d && !l ? R : 0;
+      m.beginPath();
+      m.moveTo(x0 + tl, y0);
+      m.lineTo(x1 - tr, y0); if (tr) m.arcTo(x1, y0, x1, y0 + tr, tr);
+      m.lineTo(x1, y1 - br); if (br) m.arcTo(x1, y1, x1 - br, y1, br);
+      m.lineTo(x0 + bl, y1); if (bl) m.arcTo(x0, y1, x0, y1 - bl, bl);
+      m.lineTo(x0, y0 + tl); if (tl) m.arcTo(x0, y0, x0 + tl, y0, tl);
+      m.closePath(); m.fill();
+    };
+    m.fillStyle = C.wallShade;
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (isWall(x, y)) shape(x, y, tile * 0.1);
+    m.fillStyle = C.wall;
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (isWall(x, y)) shape(x, y, 0);
+    // cantos de dentro: tira o "dentinho" quadrado e arredonda a curva
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
       if (!isWall(x, y)) continue;
-      m.fillStyle = C.wall;
-      m.fillRect(x * tile, y * tile, tile, tile);
-      // perfuração de película nos blocos internos
-      if (isWall(x - 1, y) && isWall(x + 1, y) && isWall(x, y - 1) && isWall(x, y + 1)) {
-        m.fillStyle = "rgba(242,193,78,0.07)";
-        const s = tile * 0.36;
-        roundRect(m, x * tile + (tile - s) / 2, y * tile + (tile - s * 0.8) / 2, s, s * 0.8, s * 0.2);
+      for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+        if (!(isWall(x + dx, y) && isWall(x, y + dy) && !isWall(x + dx, y + dy))) continue;
+        const cx = dx > 0 ? (x + 1) * tile : x * tile, cy = dy > 0 ? (y + 1) * tile : y * tile;
+        const sx = cx - (dx > 0 ? ins : 0), sy = cy - (dy > 0 ? ins : 0);
+        m.fillStyle = C.board; m.fillRect(sx, sy, ins, ins);
+        // filete arredondado
+        m.fillStyle = C.wall;
+        m.beginPath();
+        const px = cx - dx * ins, py = cy - dy * ins;
+        m.moveTo(px, py);
+        m.lineTo(cx, py);
+        m.arc(cx, cy, ins, dy > 0 ? (dx > 0 ? -Math.PI / 2 : -Math.PI / 2) : Math.PI / 2, dx > 0 ? Math.PI : 0, (dx > 0) === (dy > 0));
+        m.closePath();
         m.fill();
       }
     }
-    // contornos dos corredores
-    m.strokeStyle = C.marquee;
-    m.globalAlpha = 0.85;
-    m.lineWidth = Math.max(1.5, tile * 0.08);
-    m.lineCap = "square";
+    // brilho nas bordas de cima
+    m.strokeStyle = "rgba(255,255,255,0.35)"; m.lineWidth = Math.max(1, tile * 0.06); m.lineCap = "round";
     m.beginPath();
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
-      if (!isWall(x, y)) continue;
-      const px = x * tile, py = y * tile;
-      if (!isWall(x, y - 1)) { m.moveTo(px, py); m.lineTo(px + tile, py); }
-      if (!isWall(x, y + 1)) { m.moveTo(px, py + tile); m.lineTo(px + tile, py + tile); }
-      if (!isWall(x - 1, y)) { m.moveTo(px, py); m.lineTo(px, py + tile); }
-      if (!isWall(x + 1, y)) { m.moveTo(px + tile, py); m.lineTo(px + tile, py + tile); }
+      if (!isWall(x, y) || isWall(x, y - 1)) continue;
+      const l = isWall(x - 1, y) && !isWall(x - 1, y - 1), r = isWall(x + 1, y) && !isWall(x + 1, y - 1);
+      const y0 = y * tile + ins + tile * 0.08;
+      m.moveTo(x * tile + (l ? 0 : ins + R * 0.7), y0); m.lineTo((x + 1) * tile - (r ? 0 : ins + R * 0.7), y0);
     }
     m.stroke();
-    m.globalAlpha = 1;
     // porta do camarim
     const dx = DOOR.x * tile, dy = DOOR.y * tile;
-    m.fillStyle = "#e89ab0";
-    m.fillRect(dx, dy + tile * 0.42, tile, tile * 0.16);
+    m.fillStyle = C.marquee;
+    roundRect(m, dx - tile * 0.1, dy + tile * 0.38, tile * 1.2, tile * 0.24, tile * 0.12); m.fill();
     // placa do camarim
-    m.fillStyle = "rgba(243,237,226,0.5)";
-    m.font = `${Math.max(7, tile * 0.32)}px "Courier Prime", monospace`;
+    m.fillStyle = "#fff";
+    m.font = `700 ${Math.max(7, tile * 0.36)}px "Courier Prime", monospace`;
     m.textAlign = "center"; m.textBaseline = "middle";
     m.fillText("CAMARIM", (DOOR.x + 0.5) * tile, (HOUSE_Y + 1.5) * tile);
   }
@@ -883,8 +907,8 @@
   function stripedBar(c, x, y, w, h) {
     c.save();
     c.beginPath(); c.rect(x, y, w, h); c.clip();
-    c.fillStyle = "#f6f1e7"; c.fillRect(x, y, w, h);
-    c.fillStyle = "#111";
+    c.fillStyle = "#fff"; c.fillRect(x, y, w, h);
+    c.fillStyle = "#1a1030";
     const sw = h * 0.9;
     for (let i = -h * 2; i < w + h; i += sw * 2) {
       c.beginPath();
@@ -895,44 +919,51 @@
       c.closePath(); c.fill();
     }
     c.restore();
-    c.strokeStyle = "#111"; c.lineWidth = Math.max(0.6, h * 0.08);
+    c.strokeStyle = "#fff"; c.lineWidth = Math.max(0.8, h * 0.12);
     c.strokeRect(x, y, w, h);
   }
 
-  // A claquete: corpo de quadro-negro + haste listrada que abre e fecha
-  function drawClapper(c, cx, cy, s, dir, open, spin = 0, scale = 1) {
+  // A claquete: corpo vermelho com carinha + haste listrada que abre e fecha
+  function drawClapper(c, cx, cy, s, flip, tilt, open, spin = 0, scale = 1) {
     c.save();
     c.translate(cx, cy);
     if (spin) c.rotate(spin);
     if (scale !== 1) c.scale(scale, scale);
-    if (dir === D.left || (dir && dir.x === -1)) c.scale(-1, 1);
-    else if (dir && dir.y === -1) c.rotate(-Math.PI / 2);
-    else if (dir && dir.y === 1) c.rotate(Math.PI / 2);
-    c.translate(0, s * 0.02);
-    const L = -s * 0.42, W = s * 0.84;
+    if (flip) c.scale(-1, 1);
+    if (tilt) c.rotate(tilt);
+    c.translate(0, s * 0.06);
+    const L = -s * 0.42, W = s * 0.84, top = -s * 0.1, h = s * 0.46;
+    // sombra
+    c.fillStyle = "rgba(0,0,0,0.3)";
+    roundRect(c, L + s * 0.03, top + s * 0.06, W, h, s * 0.12); c.fill();
     // corpo
-    c.fillStyle = "#26232e";
-    roundRect(c, L, -s * 0.13, W, s * 0.52, s * 0.05);
-    c.fill();
-    c.strokeStyle = "#f6f1e7"; c.lineWidth = Math.max(0.8, s * 0.04); c.stroke();
-    // linhas de giz
-    c.strokeStyle = "rgba(246,241,231,0.75)"; c.lineWidth = Math.max(0.5, s * 0.025);
-    c.beginPath();
-    c.moveTo(L + s * 0.05, s * 0.06); c.lineTo(L + W - s * 0.05, s * 0.06);
-    c.moveTo(L + s * 0.05, s * 0.22); c.lineTo(L + W - s * 0.05, s * 0.22);
-    c.moveTo(0, s * 0.06); c.lineTo(0, s * 0.36);
-    c.stroke();
+    c.fillStyle = "#ff3355";
+    roundRect(c, L, top, W, h, s * 0.12); c.fill();
+    c.strokeStyle = "#fff"; c.lineWidth = Math.max(1, s * 0.055); c.stroke();
+    // olhos
+    for (const ex of [0.02, 0.24]) {
+      c.fillStyle = "#fff";
+      c.beginPath(); c.arc(ex * s, s * 0.07, s * 0.09, 0, Math.PI * 2); c.fill();
+      c.fillStyle = "#1a1030";
+      c.beginPath(); c.arc(ex * s + s * 0.03, s * 0.08, s * 0.05, 0, Math.PI * 2); c.fill();
+      c.fillStyle = "#fff";
+      c.beginPath(); c.arc(ex * s + s * 0.045, s * 0.06, s * 0.016, 0, Math.PI * 2); c.fill();
+    }
+    // bochechas e sorriso
+    c.fillStyle = "rgba(255,190,210,0.75)";
+    c.beginPath(); c.arc(-s * 0.13, s * 0.2, s * 0.05, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = "#fff"; c.lineWidth = Math.max(1, s * 0.045); c.lineCap = "round";
+    c.beginPath(); c.arc(s * 0.13, s * 0.17, s * 0.09, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke();
     // haste fixa
-    stripedBar(c, L, -s * 0.25, W, s * 0.12);
+    stripedBar(c, L, -s * 0.22, W, s * 0.12);
     // haste móvel (dobradiça à esquerda)
     c.save();
-    c.translate(L, -s * 0.25);
-    c.rotate(-open * 0.75);
+    c.translate(L, -s * 0.22);
+    c.rotate(-open * 0.7);
     stripedBar(c, 0, -s * 0.12, W, s * 0.12);
     c.restore();
-    // dobradiça
-    c.fillStyle = "#9a948a";
-    c.beginPath(); c.arc(L + s * 0.02, -s * 0.25, s * 0.045, 0, Math.PI * 2); c.fill();
+    c.fillStyle = C.marquee;
+    c.beginPath(); c.arc(L + s * 0.03, -s * 0.22, s * 0.05, 0, Math.PI * 2); c.fill();
     c.restore();
   }
 
@@ -1164,7 +1195,7 @@
       camX = Math.round(camX * dpr) / dpr; camY = Math.round(camY * dpr) / dpr;
     }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = C.board; ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(mazeCanvas, -camX * dpr, -camY * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, -camX * dpr, -camY * dpr);
     ctx.save();
@@ -1175,17 +1206,16 @@
       const c = grid[y][x];
       const cx = (x + 0.5) * tile, cy = (y + 0.5) * tile;
       if (c === ".") {
-        const w = tile * 0.32, h = tile * 0.24;
-        ctx.fillStyle = "#e9d9b4";
-        ctx.fillRect(cx - w / 2, cy - h / 2, w, h);
-        ctx.fillStyle = C.bg;
-        ctx.fillRect(cx - w / 2 + w * 0.2, cy - h / 2 + h * 0.25, w * 0.6, h * 0.5);
+        ctx.fillStyle = C.marquee;
+        ctx.beginPath(); ctx.arc(cx, cy, tile * 0.12, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,0.8)";
+        ctx.beginPath(); ctx.arc(cx - tile * 0.04, cy - tile * 0.04, tile * 0.04, 0, Math.PI * 2); ctx.fill();
       } else if (c === "o") {
-        drawCoffee(ctx, cx, cy, tile * 1.4);
+        drawCoffee(ctx, cx, cy, tile * 1.2);
       }
     }
     if (bonus && (bonus.time > 2 || Math.floor(now * 8) % 2 === 0)) {
-      drawPopcorn(ctx, (bonus.x + 0.5) * tile, (bonus.y + 0.5) * tile, tile * 1.45);
+      drawPopcorn(ctx, (bonus.x + 0.5) * tile, (bonus.y + 0.5) * tile, tile * 1.25);
     }
 
     // relógios
@@ -1193,7 +1223,7 @@
       if (!(state === "dying" && stateTimer < 1.2) && state !== "clear") {
         for (const g of ghosts) {
           const p = pos(g);
-          drawClock(ctx, g, (p.x + 0.5) * tile, (p.y + 0.5) * tile, tile * (g.face ? 1.45 : 1.3));
+          drawClock(ctx, g, (p.x + 0.5) * tile, (p.y + 0.5) * tile, tile * (g.face ? 1.25 : 1.15));
         }
       }
       // claquete
@@ -1201,10 +1231,11 @@
       const cx = (p.x + 0.5) * tile, cy = (p.y + 0.5) * tile;
       if (state === "dying") {
         const k = Math.min(1, (1.6 - stateTimer) / 1.2);
-        drawClapper(ctx, cx, cy, tile * 1.35, player.face, k < 0.2 ? 1 - k * 5 : 0, k * Math.PI * 2, Math.max(0.01, 1 - k));
+        drawClapper(ctx, cx, cy, tile * 1.15, player.hflip, 0, k < 0.2 ? 1 - k * 5 : 0, k * Math.PI * 2, Math.max(0.01, 1 - k));
       } else {
+        if (player.face.x) player.hflip = player.face.x < 0;
         const open = (state === "play" && player.moving) ? (Math.sin(now * 20) + 1) / 2 : 0.35;
-        drawClapper(ctx, cx, cy, tile * 1.35, player.face, open);
+        drawClapper(ctx, cx, cy, tile * 1.15, player.hflip, player.face.y * 0.4, open);
       }
     }
 

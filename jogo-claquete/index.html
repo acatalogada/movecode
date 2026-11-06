@@ -546,20 +546,25 @@
 
   function updatePlayer(dt) {
     const p = player, sp = speeds().player;
+    // direções desejadas: a principal e, na diagonal, a segunda
+    const wants = [p.next, p.next2].filter(Boolean);
+    const open = (e, d) => !blocked(e.x + d.x, e.y + d.y);
     if (!p.moving) {
-      if (p.next && !blocked(p.x + p.next.x, p.y + p.next.y)) {
-        p.dir = p.next; p.face = p.next; p.moving = true; p.t = 0;
-      } else return;
-    } else if (p.next && opposite(p.next, p.dir)) {
+      const d = wants.find(d => open(p, d));
+      if (!d) return;
+      p.dir = d; p.face = d; p.moving = true; p.t = 0;
+    } else if (p.next && opposite(p.next, p.dir) && !(p.next2 && same(p.next2, p.dir))) {
       reverse(p); p.face = p.dir;
-    } else if (p.next && !same(p.next, p.dir) && p.t < 0.5 && !blocked(p.x + p.next.x, p.y + p.next.y)) {
+    } else if (p.t < 0.5) {
       // tolerância: virou um pouquinho atrasado, ainda conta a curva
-      p.dir = p.next; p.face = p.next; p.t = 0;
+      const d = wants.find(d => !same(d, p.dir) && !opposite(d, p.dir) && open(p, d));
+      if (d) { p.dir = d; p.face = d; p.t = 0; }
     }
     advance(p, sp, dt, e => {
       eatAt(e.x, e.y);
-      if (e.next && !blocked(e.x + e.next.x, e.y + e.next.y)) { e.dir = e.next; e.face = e.next; }
-      if (blocked(e.x + e.dir.x, e.y + e.dir.y)) e.moving = false;
+      const d = [e.next, e.next2].filter(Boolean).find(d => open(e, d));
+      if (d) { e.dir = d; e.face = d; }
+      if (!open(e, e.dir)) e.moving = false;
     });
   }
 
@@ -1231,9 +1236,10 @@
     ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
     w: "up", s: "down", a: "left", d: "right", W: "up", S: "down", A: "left", D: "right",
   };
-  function steer(name) {
+  function steer(name, second) {
     if (!player) return;
     player.next = D[name];
+    player.next2 = second ? D[second] : null;
   }
   window.addEventListener("keydown", e => {
     if (KEYMAP[e.key]) {
@@ -1273,8 +1279,13 @@
     if (len > max) { dx = dx / len * max; dy = dy / len * max; }
     knob.style.transform = `translate(${dx}px, ${dy}px)`;
     if (len > 4) {
-      const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up");
-      if (d !== joyDir) { joyDir = d; steer(d); }
+      const h = dx > 0 ? "right" : "left", v = dy > 0 ? "down" : "up";
+      const ax = Math.abs(dx), ay = Math.abs(dy);
+      const main = ax > ay ? h : v, other = ax > ay ? v : h;
+      // na diagonal, guarda as duas direções: vira para a que estiver livre
+      const diag = Math.min(ax, ay) > Math.max(ax, ay) * 0.4;
+      const key = main + (diag ? other : "");
+      if (key !== joyDir) { joyDir = key; steer(main, diag ? other : null); }
     }
   }
   joy.addEventListener("pointerdown", e => {

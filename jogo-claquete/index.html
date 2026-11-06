@@ -140,18 +140,28 @@
   .flash {
     font-family: var(--font-display);
     color: var(--marquee);
-    font-size: clamp(26px, 7vw, 40px);
-    text-shadow: 0 2px 0 #000, 0 0 20px rgba(242, 193, 78, 0.5);
+    font-size: clamp(24px, 7vw, 36px);
     text-align: center;
     line-height: 1.1;
+    background: #12162b;
+    border: 2px solid var(--marquee);
+    border-radius: 10px;
+    padding: 14px 24px 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    max-width: 86%;
+    animation: pop 0.35s ease-out;
   }
   .flash small {
     display: block;
+    margin-top: 6px;
     font-family: var(--font-script);
-    font-size: 13px;
-    letter-spacing: 0.16em;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.08em;
     color: var(--chalk);
   }
+  @keyframes pop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .flash { animation: none; } }
   button {
     font: inherit;
     cursor: pointer;
@@ -523,7 +533,7 @@
     const release = [0, 4, 9, 14].map(v => v / (1 + (level - 1) * 0.4));
     ghosts = GHOST_DEFS.map((d, i) => {
       const corner = [{ x: COLS - 2, y: -2 }, { x: 1, y: -2 }, { x: COLS - 1, y: ROWS + 1 }, { x: 0, y: ROWS + 1 }][i];
-      const g = { ...d, corner, i, t: 0, frightened: false, moving: false, release: release[i] };
+      const g = { ...d, corner, i, t: 0, kind: d.face ? "face" : scene().kind, color: d.face ? d.color : scene().colors[i], frightened: false, moving: false, release: release[i] };
       if (i === 0) Object.assign(g, { x: DOOR_OUT.x, y: DOOR_OUT.y, dir: D.left, state: "active", moving: true });
       else Object.assign(g, { x: HOUSE_SLOTS[i - 1], y: HOUSE_Y, dir: D.up, state: "house" });
       return g;
@@ -537,9 +547,19 @@
     buildGrid(); resetPositions(); toReady();
   }
 
+  // cada cena traz um elenco novo de perseguidores e outra cor de cenário
+  const SCENES = [
+    { kind: "clock", name: "Despertadores", wall: "#4a5d9c", shade: "#2c3768", colors: ["#e5484d", "#b98cf5", "#3fc1b0"] },
+    { kind: "camera", name: "Câmeras", wall: "#3f8a7a", shade: "#245548", colors: ["#f08c3a", "#6cb6ff", "#e86fb0"] },
+    { kind: "reel", name: "Rolos de filme", wall: "#8a4f86", shade: "#552f53", colors: ["#f2c14e", "#4fd1c5", "#ff7a6b"] },
+    { kind: "mega", name: "Megafones", wall: "#9c7a3f", shade: "#5f4824", colors: ["#e5484d", "#7c8cff", "#5fd18a"] },
+  ];
+  const scene = () => SCENES[(level - 1) % SCENES.length];
+
   function toReady() {
-    state = "ready"; stateTimer = 2.0;
-    showFlash(`Cena ${level} · Take ${take}`, "Ação!");
+    state = "ready"; stateTimer = take === 1 ? 2.4 : 2.0;
+    renderMaze();
+    showFlash(`Cena ${level} · Take ${take}`, take === 1 ? `${scene().name} no set · Ação!` : "Ação!");
     clap();
     updateHud();
   }
@@ -619,7 +639,7 @@
       nextLife += 5000; lives++;
       addPopup(x, y, "+1 vida", "#7ee08a"); sfx.bonus();
     }
-    if (dotsLeft <= 0) { state = "clear"; stateTimer = 2.4; sfx.clear(); showFlash("Cena aprovada!", "Corta e imprime"); }
+    if (dotsLeft <= 0) { state = "clear"; stateTimer = 2.4; sfx.clear(); showFlash("Cena aprovada!", `Próxima: ${SCENES[level % SCENES.length].name}`); }
     updateHud();
   }
 
@@ -789,8 +809,6 @@
     overlay.innerHTML = `
       <div class="card">
         <h2>Claquete em Fuga</h2>
-        <p>Você é a claquete. Recolha todos os fotogramas do estúdio antes que os despertadores, e o Bolsonaro, alcancem você.</p>
-        <p class="small">Uma xícara de café deixa os perseguidores lentos por alguns segundos. Aproveite para pegá-los. A pipoca vale bônus.</p>
         <button class="btn" id="startBtn">Ação!</button>
       </div>`;
     document.getElementById("startBtn").addEventListener("click", start);
@@ -871,9 +889,10 @@
       m.lineTo(x0, y0 + tl); if (tl) m.arcTo(x0, y0, x0 + tl, y0, tl);
       m.closePath(); m.fill();
     };
-    m.fillStyle = C.wallShade;
+    const sc = scene();
+    m.fillStyle = sc.shade;
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (isWall(x, y)) shape(x, y, tile * 0.1);
-    m.fillStyle = C.wall;
+    m.fillStyle = sc.wall;
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (isWall(x, y)) shape(x, y, 0);
     // cantos de dentro: tira o "dentinho" quadrado e arredonda a curva
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
@@ -884,7 +903,7 @@
         const sx = cx - (dx > 0 ? ins : 0), sy = cy - (dy > 0 ? ins : 0);
         m.fillStyle = C.board; m.fillRect(sx, sy, ins, ins);
         // filete arredondado
-        m.fillStyle = C.wall;
+        m.fillStyle = sc.wall;
         m.beginPath();
         const px = cx - dx * ins, py = cy - dy * ins;
         m.moveTo(px, py);
@@ -1082,8 +1101,90 @@
     c.restore();
   }
 
-  function drawClock(c, g, cx, cy, s) {
+  // olhos e boca comuns a todos os perseguidores
+  function drawEyes(c, g, r, ex, ey, er, flashing, eyesOnly) {
+    const ink = "#1b1720";
+    if (g.frightened && !eyesOnly) {
+      c.fillStyle = flashing ? "#e5484d" : "#e8ecff";
+      c.beginPath(); c.arc(-ex, ey, er * 0.5, 0, Math.PI * 2); c.arc(ex, ey, er * 0.5, 0, Math.PI * 2); c.fill();
+      c.strokeStyle = c.fillStyle; c.lineWidth = Math.max(0.8, r * 0.1);
+      c.beginPath();
+      for (let k = 0; k <= 4; k++) {
+        const x = -ex * 1.1 + k * ex * 0.55, y = ey + er * 2.1 + (k % 2 ? -er * 0.35 : er * 0.2);
+        k ? c.lineTo(x, y) : c.moveTo(x, y);
+      }
+      c.stroke();
+      return;
+    }
+    c.fillStyle = "#fff"; c.strokeStyle = ink; c.lineWidth = Math.max(0.6, r * 0.07);
+    for (const sx of [-1, 1]) { c.beginPath(); c.arc(sx * ex, ey, er, 0, Math.PI * 2); c.fill(); c.stroke(); }
+    c.fillStyle = eyesOnly ? "#2d6cdf" : ink;
+    const d = g.dir || D.left;
+    for (const sx of [-1, 1]) {
+      c.beginPath(); c.arc(sx * ex + d.x * er * 0.4, ey + d.y * er * 0.4, er * 0.5, 0, Math.PI * 2); c.fill();
+    }
+  }
+
+  function drawEnemy(c, g, cx, cy, s) {
     if (g.face) return drawFace(c, g, cx, cy, s);
+    if (g.kind === "clock") return drawClock(c, g, cx, cy, s);
+    const r = s * 0.36;
+    const flashing = g.frightened && frightTimer < 2 && Math.floor(now * 6) % 2 === 0;
+    const eyesOnly = g.state === "eaten" || g.state === "entering";
+    const body = g.frightened ? (flashing ? "#f3ede2" : "#3b4cc0") : g.color;
+    const dark = g.frightened ? "#26306f" : "#1b1720";
+    const trim = g.frightened ? "#c9d2ff" : "#efe7d6";
+    c.save();
+    c.translate(cx, cy);
+    if (g.state === "house") c.translate(0, Math.sin(now * 5 + g.i) * s * 0.08);
+    const flip = (g.dir && g.dir.x < 0) ? -1 : 1;
+    if (!eyesOnly) {
+      if (g.kind === "camera") {
+        // dois rolos em cima, corpo e lente
+        for (const [x, y, rr] of [[-0.42, -0.62, 0.36], [0.3, -0.66, 0.32]]) {
+          c.fillStyle = trim;
+          c.beginPath(); c.arc(x * r * flip, y * r, rr * r, 0, Math.PI * 2); c.fill();
+          c.fillStyle = body;
+          c.beginPath(); c.arc(x * r * flip, y * r, rr * r * 0.4, 0, Math.PI * 2); c.fill();
+        }
+        c.fillStyle = body;
+        roundRect(c, -r * 0.9, -r * 0.3, r * 1.5, r * 1.05, r * 0.2); c.fill();
+        c.fillStyle = trim;
+        c.beginPath();
+        c.moveTo(r * 0.6 * flip, r * 0.0); c.lineTo(r * 1.05 * flip, -r * 0.18);
+        c.lineTo(r * 1.05 * flip, r * 0.62); c.lineTo(r * 0.6 * flip, r * 0.45); c.closePath(); c.fill();
+        c.translate(-r * 0.15 * flip, r * 0.08);
+      } else if (g.kind === "reel") {
+        // rolo de filme girando
+        c.fillStyle = body;
+        c.beginPath(); c.arc(0, 0, r, 0, Math.PI * 2); c.fill();
+        c.fillStyle = dark;
+        const rot = now * (g.frightened ? 1 : 4) * flip;
+        for (let k = 0; k < 6; k++) {
+          const a = rot + k * Math.PI / 3;
+          c.beginPath(); c.arc(Math.cos(a) * r * 0.7, Math.sin(a) * r * 0.7, r * 0.17, 0, Math.PI * 2); c.fill();
+        }
+        c.fillStyle = g.frightened ? "#c9d2ff" : "#f6eedd";
+        c.beginPath(); c.arc(0, 0, r * 0.5, 0, Math.PI * 2); c.fill();
+      } else if (g.kind === "mega") {
+        // megafone do diretor
+        c.fillStyle = trim;
+        c.fillRect(-r * 0.15 * flip - r * 0.1, r * 0.3, r * 0.2, r * 0.6);
+        c.fillStyle = body;
+        c.beginPath();
+        c.moveTo(-r * 0.95 * flip, -r * 0.28); c.lineTo(r * 0.75 * flip, -r * 0.85);
+        c.lineTo(r * 0.75 * flip, r * 0.85); c.lineTo(-r * 0.95 * flip, r * 0.28); c.closePath(); c.fill();
+        c.fillStyle = trim;
+        c.beginPath(); c.ellipse(r * 0.8 * flip, 0, r * 0.18, r * 0.88, 0, 0, Math.PI * 2); c.fill();
+        c.translate(-r * 0.15 * flip, 0);
+      }
+    }
+    const small = g.kind === "reel" ? 0.8 : 1;
+    drawEyes(c, g, r, r * 0.26 * small, -r * 0.08, r * 0.17 * small, flashing, eyesOnly);
+    c.restore();
+  }
+
+  function drawClock(c, g, cx, cy, s) {
     const r = s * 0.34;
     const flashing = g.frightened && frightTimer < 2 && Math.floor(now * 6) % 2 === 0;
     c.save();
@@ -1237,7 +1338,7 @@
       if (!(state === "dying" && stateTimer < 1.2) && state !== "clear") {
         for (const g of ghosts) {
           const p = pos(g);
-          drawClock(ctx, g, (p.x + 0.5) * tile, (p.y + 0.5) * tile, tile * (g.face ? 1.25 : 1.15));
+          drawEnemy(ctx, g, (p.x + 0.5) * tile, (p.y + 0.5) * tile, tile * (g.face ? 1.25 : 1.15));
         }
       }
       // claquete

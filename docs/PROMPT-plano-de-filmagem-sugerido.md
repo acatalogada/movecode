@@ -1,6 +1,4 @@
-Olá, Claude! Estou desenvolvendo o **CineCall**, meu software para assistentes de direção (Next.js 14 + Neon/Postgres, hospedado na Vercel, já integrado ao Claude via `@anthropic-ai/sdk`). O app já faz a decupagem automática do roteiro, monta as tiras das cenas com sinopse, permite organizar o plano de filmagem dia a dia e gerar a Ordem do Dia.
-
-Quero construir um diferencial que, até onde sei, nenhum software tem: o **Plano de Filmagem Sugerido**. Hoje o assistente cria os dias e arrasta as tiras manualmente, agrupando por locação e equilibrando o peso de cada dia. Quero que o sistema proponha automaticamente um plano inicial, otimizado e explicado, que o assistente depois ajusta. Não é o plano definitivo, é um ponto de partida inteligente.
+Quero construir o **Plano de Filmagem Sugerido**: em vez de o assistente criar os dias e arrastar as tiras manualmente, o sistema propõe automaticamente um plano inicial, otimizado e explicado, que o assistente depois ajusta. Não é o plano definitivo, é um ponto de partida inteligente.
 
 ## Arquitetura decidida (híbrida)
 
@@ -55,6 +53,7 @@ No repositório anterior (`screenplay-vercel-fixed`) a estrutura era esta. Confi
 - **Fase 2:** Claude estima a complexidade de cada cena (saída em JSON estruturado, com justificativa curta) e gera a explicação do plano por dia.
 - **Fase 3:** endereços e tempo de deslocamento, disponibilidades completas, travas de datas, ajuste do plano por chat.
 - **Fase 4:** registro do realizado por dia e calibragem automática dos pesos; importação de planos de referência em PDF (o Claude extrai os dados estruturados).
+- **Custo de IA sob controle:** o motor não usa IA. A complexidade de cada cena é calculada uma única vez e salva no banco (de preferência aproveitando a própria chamada de leitura do roteiro), e só é recalculada para cenas alteradas. As chamadas ao Claude para explicação e ajustes devem enviar só um resumo compacto do plano, com prompt caching na parte fixa.
 - Se a heurística em JS ficar limitada, avaliar um solver de verdade (ex.: OR-Tools CP-SAT numa função Python serverless na Vercel).
 
 ## Como quero que você trabalhe

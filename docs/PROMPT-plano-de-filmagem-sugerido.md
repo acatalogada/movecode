@@ -85,6 +85,23 @@ Vou tentar separar projetos antigos meus (e talvez de colegas assistentes, com a
 
 Esse conjunto de projetos viraria um teste fixo: a cada mudança no motor, rodamos de novo e vemos se o plano sugerido ficou mais próximo do real. Me ajude a pensar em como medir essa "proximidade" e em como armazenar esses projetos de referência (talvez também importando o plano real em PDF ou planilha, com o Claude extraindo os dados).
 
+## Outras melhorias no stripboard que quero fazer
+Não fazem parte do plano sugerido, mas quero conversar sobre elas também:
+
+**1. Planos da cena e horário de cada um, compactos dentro da tira.**
+Vi num dos TCCs um stripboard que mostra, dentro da própria tira, os planos da cena com uma descrição bem curta e o horário previsto de cada um, ocupando pouquíssimo espaço. Por exemplo, uma cena com 3 planos mostra o hora a hora de cada plano. Quero algo assim no CineCall:
+- uma linha discreta por plano (número/tipo do plano, descrição curtinha, horário previsto), que pode ser recolhida ou expandida;
+- os horários calculados a partir do horário de início do dia e da duração estimada de cada plano/setup;
+- isso conversa com o plano sugerido: a duração dos planos ajuda a estimar o peso real da cena e se o dia "cabe".
+Me ajude a pensar em onde guardar os planos (tabela própria ligada à cena?) e em como mostrar sem poluir a tira.
+
+**2. Um jeito mais visual de inserir itens, além do botão direito.**
+Hoje, para inserir coisas no stripboard (dia de filmagem, dia de folga, banner, referência visual, link para mapa, observação), usamos o botão direito e o botão "+" entre as tiras. O menu está ficando com informação demais e confunde. Quero sugerir:
+- uma barra ou paleta visual (lateral ou no topo) com os tipos de item como ícones/cartões, de onde a pessoa **arrasta e solta** o item no ponto desejado do stripboard;
+- manter o botão direito como atalho, mas mais enxuto;
+- pensar em celular/tablet também (toque em vez de arrastar, se for o caso).
+No código antigo, o menu de inserção ficava em `pages/project/[id]/index.js` (lista `options` com `shooting_day`, `day_off_manual`, `banner`, `visual_ref`, `map_link`, `note`, e a função `insertAt`). Confira como está no projeto atual.
+
 ## Como quero que você trabalhe
 1. Primeiro **leia o projeto** e me confirme a estrutura atual (tabelas, endpoints, telas do plano de filmagem).
 2. Me apresente o **plano da Fase 1** (schema, endpoints, algoritmo, telas) antes de codar e espere meu ok.

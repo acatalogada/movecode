@@ -85,22 +85,28 @@ Vou tentar separar projetos antigos meus (e talvez de colegas assistentes, com a
 
 Esse conjunto de projetos viraria um teste fixo: a cada mudança no motor, rodamos de novo e vemos se o plano sugerido ficou mais próximo do real. Me ajude a pensar em como medir essa "proximidade" e em como armazenar esses projetos de referência (talvez também importando o plano real em PDF ou planilha, com o Claude extraindo os dados).
 
-## Outras melhorias no stripboard que quero fazer
-Não fazem parte do plano sugerido, mas quero conversar sobre elas também:
+## Outras pautas para conversarmos (nada decidido)
+Não fazem parte do plano sugerido. São ideias e incômodos que quero discutir com você. Nada aqui é decisão: quero sua opinião, alternativas e prós e contras antes de mexer em qualquer coisa.
 
-**1. Planos da cena e horário de cada um, compactos dentro da tira.**
-Vi num dos TCCs um stripboard que mostra, dentro da própria tira, os planos da cena com uma descrição bem curta e o horário previsto de cada um, ocupando pouquíssimo espaço. Por exemplo, uma cena com 3 planos mostra o hora a hora de cada plano. Quero algo assim no CineCall:
+**1. Planos da cena e horário de cada um, compactos dentro da tira (pauta).**
+Vi num dos TCCs um stripboard que mostra, dentro da própria tira, os planos da cena com uma descrição bem curta e o horário previsto de cada um, ocupando pouquíssimo espaço. Por exemplo, uma cena com 3 planos mostra o hora a hora de cada plano. Gostaria de conversar sobre ter algo assim no CineCall, por exemplo:
 - uma linha discreta por plano (número/tipo do plano, descrição curtinha, horário previsto), que pode ser recolhida ou expandida;
 - os horários calculados a partir do horário de início do dia e da duração estimada de cada plano/setup;
 - isso conversa com o plano sugerido: a duração dos planos ajuda a estimar o peso real da cena e se o dia "cabe".
 Me ajude a pensar em onde guardar os planos (tabela própria ligada à cena?) e em como mostrar sem poluir a tira.
 
-**2. Um jeito mais visual de inserir itens, além do botão direito.**
-Hoje, para inserir coisas no stripboard (dia de filmagem, dia de folga, banner, referência visual, link para mapa, observação), usamos o botão direito e o botão "+" entre as tiras. O menu está ficando com informação demais e confunde. Quero sugerir:
+**2. Um jeito mais visual de inserir itens, além do botão direito (pauta).**
+Hoje, para inserir coisas no stripboard (dia de filmagem, dia de folga, banner, referência visual, link para mapa, observação), usamos o botão direito e o botão "+" entre as tiras. O menu está ficando com informação demais e confunde. Ideias para discutirmos:
 - uma barra ou paleta visual (lateral ou no topo) com os tipos de item como ícones/cartões, de onde a pessoa **arrasta e solta** o item no ponto desejado do stripboard;
 - manter o botão direito como atalho, mas mais enxuto;
 - pensar em celular/tablet também (toque em vez de arrastar, se for o caso).
 No código antigo, o menu de inserção ficava em `pages/project/[id]/index.js` (lista `options` com `shooting_day`, `day_off_manual`, `banner`, `visual_ref`, `map_link`, `note`, e a função `insertAt`). Confira como está no projeto atual.
+
+**3. Fontes do site e do stripboard (pauta).**
+Pode ser impressão minha, mas acho que existe uma fonte com leitura melhor para o site e principalmente para o stripboard. Não precisa ser grande; precisa ter leitura perfeita mesmo em tamanho pequeno (tiras densas, números de cena, páginas em oitavos, IDs de elenco). Gostaria de ficar o mais próximo possível do visual do Movie Magic Scheduling, que é a referência do mercado (não sei qual fonte ele usa; vale pesquisarmos). Também quero redefinir as fontes do sistema como um todo (hierarquia, tamanhos, pesos).
+- No código antigo: a interface usava a fonte do sistema (`styles/globals.css`: `-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`), as exportações/impressões usavam `Arial` com 9–12px (`lib/exports.js` e trechos de `pages/project/[id]/index.js`), e o banner tem um seletor de fontes (`FONTS`). Confira como está hoje.
+- Pontos para avaliarmos: fontes pensadas para leitura em tamanho pequeno (com e sem versão condensada, que ajuda tiras estreitas), números tabulares (alinhados em colunas), diferença clara entre 0/O e 1/l/I, consistência entre a tela e o PDF impresso, e carregamento rápido (ex.: via `next/font`).
+- Me traga algumas opções com prós e contras, e se possível uma comparação visual de uma tira com cada fonte, antes de decidirmos.
 
 ## Como quero que você trabalhe
 1. Primeiro **leia o projeto** e me confirme a estrutura atual (tabelas, endpoints, telas do plano de filmagem).

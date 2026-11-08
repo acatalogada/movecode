@@ -72,7 +72,18 @@ Já temos custo com a leitura de roteiro pela IA, então quero que essa funciona
 - Modelo de plano de filmagem da UNILA: https://portal.unila.edu.br/graduacao/cinemaeaudiovisual/arquivos/PlanodeFilmagem_PORT.pdf
 - Storiara: stripboard e one-line schedule preenchidos para um longa fictício de 12 dias, e um guia de leitura de planos: https://storiara.com/templates/stripboard e https://storiara.com/learn/shooting-schedules
 - StudioBinder: modelo de shooting schedule: https://www.studiobinder.com/blog/downloads/film-production-shooting-schedule-template/
-- **A melhor referência devem ser planos reais meus (ou de colegas, com autorização) junto com os respectivos roteiros.** Ideia: processar o roteiro no CineCall, gerar o plano sugerido e comparar com o plano que foi de fato usado. Isso serviria como conjunto de teste para calibrar o motor.
+- Em espanhol só encontrei modelos de curta ou acadêmicos, como o da Universidade de Guanajuato: https://blogs.ugto.mx/rea/clase-digital-6-fases-de-la-produccion-cinematografica/
+
+**Conclusão da pesquisa:** planos reais completos de longas quase não são públicos, porque são documentos internos das produções. E planos de outros filmes ajudam pouco sem o roteiro correspondente, porque não dá para comparar o sugerido com o realizado. Para a lógica, o estudo (TCCs e guias acima) e a minha experiência de set bastam.
+
+## Planos reais com roteiro como "gabarito" (ideia para discutirmos)
+Vou tentar separar projetos antigos meus (e talvez de colegas assistentes, com autorização) que tenham **o roteiro e o plano de filmagem final**. A ideia de uso:
+1. Processar o roteiro no CineCall normalmente.
+2. Gerar o plano sugerido com as mesmas condições daquela produção (número de dias, locações, disponibilidades, meta de páginas).
+3. Comparar o plano sugerido com o plano real: agrupamentos por locação, número de trocas de locação por dia, dias de cada ator, páginas por dia, ordem das diurnas e noturnas.
+4. Usar as diferenças para calibrar os pesos e as regras do motor.
+
+Esse conjunto de projetos viraria um teste fixo: a cada mudança no motor, rodamos de novo e vemos se o plano sugerido ficou mais próximo do real. Me ajude a pensar em como medir essa "proximidade" e em como armazenar esses projetos de referência (talvez também importando o plano real em PDF ou planilha, com o Claude extraindo os dados).
 
 ## Como quero que você trabalhe
 1. Primeiro **leia o projeto** e me confirme a estrutura atual (tabelas, endpoints, telas do plano de filmagem).

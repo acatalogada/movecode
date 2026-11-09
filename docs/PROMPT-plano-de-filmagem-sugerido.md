@@ -115,3 +115,36 @@ Pode ser impressão minha, mas acho que existe uma fonte com leitura melhor para
 4. O plano sugerido sempre deve ser editável e reversível. Nunca apagar o trabalho manual do assistente.
 5. Lembre que tudo aqui é proposta: discuta comigo antes de decidir.
 6. Me pergunte o que precisar sobre a prática de set. Minhas preferências iniciais: meta padrão de ___ páginas/dia (ou ___ cenas/dia); multiplicadores que considero importantes: ___.
+
+---
+
+# Anexo: contexto e análise da conversa anterior (com o Claude no celular)
+
+Este anexo traz o raciocínio completo da conversa em que essas pautas surgiram, para você não precisar que eu explique tudo de novo. Continua valendo: **nada aqui é decisão**.
+
+## A ideia original
+Muitos softwares fazem a decupagem automática e permitem montar o plano de filmagem (tiras com sinopse organizadas dia a dia). O que nenhum faz, até onde sei, é um **plano de filmagem sugerido**. Hoje o assistente de direção insere as datas e organiza as tiras manualmente: agrupa por locação, distribui pelo peso (tempo de filmagem de cada cena, que varia com a quantidade de planos e takes), considera diurnas e noturnas, elenco e deslocamento. Perguntei se dava para "treinar o Claude" com planos de outros filmes ou com estudos para gerar um plano sugerido, a partir de dados que o assistente informa (endereços, preferência de começar de dia ou de noite, quantidade de cenas ou páginas por dia etc.).
+
+## A análise do Claude
+**É possível, mas o caminho não é treinar o Claude.**
+- A Anthropic não oferece fine-tuning aberto do Claude, e nem seria preciso: o conhecimento de plano de filmagem entra por regras, dados e exemplos no prompt.
+- Montar plano de filmagem é um problema de **otimização combinatória** (encaixar cenas em dias respeitando locação, período, disponibilidade de elenco, deslocamento e limite de páginas). Uma IA de linguagem sozinha erra a conta e quebra restrições sem perceber. Um algoritmo de otimização garante que nenhuma regra dura seja violada.
+- Por isso a proposta é **híbrida**: o motor de otimização faz a conta; o Claude faz o que exige leitura e critério (estimar a complexidade de cada cena, entender preferências escritas em linguagem natural, explicar o plano e ajustar por conversa).
+- O **aprendizado** viria dos dados das próprias produções: comparar o planejado com o realizado (a partir da Ordem do Dia) e ajustar os pesos. Com o tempo, cada produtora/assistente teria um motor calibrado para o seu ritmo, um diferencial difícil de copiar.
+- **Concorrência:** Movie Magic Scheduling, StudioBinder e Gorilla ordenam tiras por critérios (isso é ordenação, não otimização com preferências). Algumas ferramentas mais novas, como a Filmustage, anunciam agendamento com IA: vale testar para ver até onde vão. A combinação de plano sugerido + preferências do assistente + deslocamento real + calibragem pelo realizado não parece existir pronta.
+- **O código já ajuda muito:** a tabela `scenes` já tem quase tudo que o motor precisa; o ponto de encaixe óbvio é o `recalculate-days.js`, que hoje só divide as cenas em fatias iguais; o projeto já usa o Claude.
+
+## Custos (estimativa, a confirmar)
+- **Motor de otimização:** custo zero de IA. É código comum rodando na Vercel; para 100–200 cenas, resolve em menos de um segundo.
+- **IA**, com o modelo atual (`claude-sonnet-4-6`: US$ 3 por milhão de tokens de entrada, US$ 15 por milhão de saída), para um longa de ~100 cenas:
+  - estimar o peso de cada cena (uma vez por projeto): ~US$ 0,15;
+  - interpretar as preferências escritas: ~US$ 0,02 por plano;
+  - explicar o plano sugerido: ~US$ 0,06 por plano gerado;
+  - cada ajuste por conversa: ~US$ 0,03 a 0,05.
+  - Uso realista (um plano + ~10 ajustes): **US$ 0,50 a 0,70 por filme**. Bem menos que a leitura do roteiro, que manda o texto inteiro para a IA.
+- **Se a complexidade vier junto da leitura do roteiro**, o custo extra dela fica praticamente em zero.
+- **Mapas (opcional):** APIs gratuitas (OpenRouteService, OSRM) ou Google Maps (~US$ 1–2 por projeto, calculando os tempos entre locações uma vez e guardando). Dá para começar com tempos informados manualmente.
+
+## Pesquisa de planos de filmagem prontos
+- Planos reais completos de longas quase não são públicos (são documentos internos das produções). Busquei em português, inglês e espanhol.
+- O que vale mais é o **estudo da lógica** (TCCs e guias listados acima) e, principalmente, **planos reais meus ou de colegas junto com os roteiros**, usados como gabarito para testar e calibrar o motor.
